@@ -1,0 +1,21 @@
+node_modules
+dist
+
+/numbers.js
+/numbers.spec.js
+
+# Output
+jest.json
+results.json
+junit.xml
+results.xml
+tmp
+
+debug.log
+yarn-error.log
+
+# Docker base files
+/in
+/out
+/production_node_modules
+/package.template.json

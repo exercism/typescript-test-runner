@@ -1,0 +1,64 @@
+{
+  "name": "@exercism/typescript-test-runner",
+  "description": "Automated Test runner for exercism solutions in TypeScript.",
+  "author": "Derk-Jan Karrenbeld <derk-jan+github@karrenbeld.info>",
+  "version": "1.0.0",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/exercism/typescript-test-runner"
+  },
+  "directories": {
+    "lib": "./dist",
+    "doc": "./docs",
+    "test": "./test"
+  },
+  "bin": {
+    "typescript-test-runner": "bin/run.sh"
+  },
+  "scripts": {
+    "execute": "./bin/run.sh",
+    "execute:dev": "yarn build && yarn execute",
+    "prebuild": "rimraf ./dist",
+    "build": "yarn tsc --project ./src/tsconfig.json --outDir ./dist",
+    "watch": "yarn build -w",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test:bare && yarn lint",
+    "lint": "yarn eslint . --ext ts,js,tsx,jsx,mjs -c .eslintrc",
+    "test": "yarn build && yarn test:bare",
+    "test:bare": "jest --roots test --testPathIgnorePatterns=\"fixtures/\""
+  },
+  "dependencies": {
+    "@babel/cli": "^7.13.14",
+    "@babel/core": "^7.13.14",
+    "@babel/node": "^7.13.13",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.13.8",
+    "@babel/plugin-syntax-bigint": "^7.8.3",
+    "@babel/preset-env": "^7.13.12",
+    "@babel/preset-typescript": "^7.13.0",
+    "@exercism/static-analysis": "^0.7.3",
+    "@typescript-eslint/typescript-estree": "^4.21.0",
+    "@typescript-eslint/visitor-keys": "^4.21.0",
+    "babel-jest": "^26.6.3",
+    "chalk": "^4.1.0",
+    "jest": "^26.6.3",
+    "jest-junit": "^12.0.0",
+    "jest-util": "^26.6.2",
+    "slash": "^3.0.0",
+    "string-length": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.14.37",
+    "@typescript-eslint/eslint-plugin": "^4.21.0",
+    "@typescript-eslint/parser": "^4.21.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.23.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^24.3.4",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.2.4"
+  }
+}
