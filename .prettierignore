@@ -1,3 +1,5 @@
+/.github/labels.yml
+/.github/workflows/sync-labels.yml
 /test/fixtures
 /tmp
 /dist
