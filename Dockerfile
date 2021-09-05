@@ -22,10 +22,6 @@ COPY . .
 RUN set -ex; \
   yarn install; \
   yarn build; \
-  # install all the development modules (used for building)
-  rm -rf node_modules; \
-  # install only the node_modules we need for production (which is all for tests to compile)
-  yarn install; \
   # clean our yarn cache
   yarn cache clean;
 
