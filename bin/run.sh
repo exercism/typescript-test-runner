@@ -123,7 +123,22 @@ set +e
 
 # Run tsc
 cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
+
+if test -f "${INPUT}tsconfig.json"; then
+  echo "Found tsconfig.json; disabling test compilation"
+
+  sed -i 's/, "\.meta\/\*"//' "${INPUT}tsconfig.json"
+  sed -i 's/"node_modules"/"node_modules", "*.test.ts", ".meta\/*"/' "${INPUT}tsconfig.json"
+fi;
+
+echo "Running tsc"
 tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 | sed 's/"/\\"/g' )"
+
+if test -f "${INPUT}tsconfig.json"; then
+  echo "Found tsconfig.json; enabling test compilation"
+  sed -i 's/\["\*"\]/["*", ".meta\/*"]/' "${INPUT}tsconfig.json"
+  sed -i 's/"node_modules", "\*\.test\.ts", "\.meta\/\*"/"node_modules"/' "${INPUT}tsconfig.json"
+fi;
 
 test_exit=$?
 

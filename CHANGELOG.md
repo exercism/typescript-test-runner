@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.3
+
+- Disable compilation of `.test.ts` files when running in test-runner
+
 ## 2.0.2
 
 - Copy development packages to input directory
