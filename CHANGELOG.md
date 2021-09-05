@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+- Copy development packages to input directory
+
 ## 2.0.1
 
 - Add development packages (types) so it can compile the tests
