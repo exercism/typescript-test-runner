@@ -122,6 +122,7 @@ mkdir -p "${OUTPUT}"
 set +e
 
 # Run tsc
+cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
 tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 | sed 's/"/\\"/g' )"
 
 test_exit=$?
@@ -136,7 +137,7 @@ then
   # tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
   # echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
   # sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
-
+  echo "tsc failed"
   # Test runner didn't fail!
   # exit 0
 else
