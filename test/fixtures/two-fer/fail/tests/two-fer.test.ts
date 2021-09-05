@@ -3,7 +3,7 @@ import { twoFer } from './two-fer'
 describe('TwoFer', () => {
   it('no name given', () => {
     const expected = 'One for you, one for me.'
-    expect(twoFer()).toEqual(expected)
+    expect(twoFer('')).toEqual(expected)
   })
 
   it('a name given', () => {
