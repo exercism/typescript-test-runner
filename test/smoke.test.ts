@@ -84,7 +84,7 @@ describe('typescript-test-runner', () => {
     })
   })
 
-  const failures = ['tests']
+  const failures = ['tests', 'empty']
   failures.forEach((cause) => {
     describe(`failing solution (${cause})`, () => {
       const resultPath = join(
@@ -173,7 +173,7 @@ describe('typescript-test-runner', () => {
     })
   })
 
-  const errors = ['missing', 'syntax', 'malformed_tests', 'empty']
+  const errors = ['missing', 'syntax', 'malformed_tests']
   errors.forEach((cause) => {
     describe(`error solution (${cause})`, () => {
       const resultPath = join(
