@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- Add development packages (types) so it can compile the tests
+
 ## 2.0.0
 
 - Implement `tsc` compilation
