@@ -129,17 +129,18 @@ test_exit=$?
 
 if [ $test_exit -eq 2 ]
 then
+  echo "tsc compilation failed"
+
   # Compose the message to show to the student
   #
   # TODO: interpret the tsc_result lines and pull out the source.
   #       We actually already have code to do this, given the cursor position
   #
-  # tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
-  # echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
-  # sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
-  echo "tsc failed"
+  tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
+  echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
+  sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
   # Test runner didn't fail!
-  # exit 0
+  exit 0
 else
   echo "tsc compilation success"
 fi
