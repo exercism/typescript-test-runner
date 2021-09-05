@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0
+
+- Implement `tsc` compilation
+
 ## 1.0.2
 
 - Fix output's conditional assignment

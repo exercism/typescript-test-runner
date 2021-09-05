@@ -84,7 +84,7 @@ describe('typescript-test-runner', () => {
     })
   })
 
-  const failures = ['tests', 'empty']
+  const failures = ['tests']
   failures.forEach((cause) => {
     describe(`failing solution (${cause})`, () => {
       const resultPath = join(
@@ -112,6 +112,11 @@ describe('typescript-test-runner', () => {
         )
 
         // Even when the tests fail, the status should be 0
+        // 0: passed
+        // 1: tests failed (jest)
+        // 2: could not compile (tsc)
+        //
+        // In case of a captured 1 or 2, they should be converted back to 0
         expect(spawned.status).toBe(0)
       })
 
@@ -168,7 +173,7 @@ describe('typescript-test-runner', () => {
     })
   })
 
-  const errors = ['missing', 'syntax', 'malformed_tests']
+  const errors = ['missing', 'syntax', 'malformed_tests', 'empty']
   errors.forEach((cause) => {
     describe(`error solution (${cause})`, () => {
       const resultPath = join(
@@ -196,6 +201,11 @@ describe('typescript-test-runner', () => {
         )
 
         // Even when the tests fail, the status should be 0
+        // 0: passed
+        // 1: tests failed (jest)
+        // 2: could not compile (tsc)
+        //
+        // In case of a captured 1 or 2, they should be converted back to 0
         expect(spawned.status).toBe(0)
       })
 

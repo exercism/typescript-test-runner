@@ -41,8 +41,6 @@ else
   # access to:
   #
   # - published: https://exercism.io/tracks/typescript/exercises/clock/solutions/c3b826d95cb54441a8f354d7663e9e16
-  # - own: https://exercism.io/my/solutions/c3b826d95cb54441a8f354d7663e9e16
-  # - mentoring: https://exercism.io/mentor/solutions/c3b826d95cb54441a8f354d7663e9e16
   # - private: https://exercism.io/solutions/c3b826d95cb54441a8f354d7663e9e16
   #
   uuid=$(basename $1)
@@ -123,8 +121,31 @@ mkdir -p "${OUTPUT}"
 # Disable auto exit
 set +e
 
+# Run tsc
+tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 | sed 's/"/\\"/g' )"
+
+test_exit=$?
+
+if [ $test_exit -eq 2 ]
+then
+  # Compose the message to show to the student
+  #
+  # TODO: interpret the tsc_result lines and pull out the source.
+  #       We actually already have code to do this, given the cursor position
+  #
+  tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
+  echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
+  sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
+
+  # Test runner didn't fail!
+  exit 0
+else
+  echo "tsc compilation success"
+fi
+
+
 # Run tests
-"$ROOT/node_modules/.bin/jest" "${INPUT}*" \
+( "$ROOT/node_modules/.bin/jest" "${INPUT}*" \
                                --outputFile="${result_file}" \
                                --reporters "${REPORTER}" \
                                --noStackTrace \
@@ -134,7 +155,7 @@ set +e
                                --ci \
                                --runInBand \
                                --bail 1 \
-                               --setupFilesAfterEnv ${SETUP}
+                               --setupFilesAfterEnv ${SETUP} )
 
 # Convert exit(1) (jest worked, but there are failing tests) to exit(0)
 test_exit=$?
