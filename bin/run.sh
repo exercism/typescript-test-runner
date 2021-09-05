@@ -126,21 +126,22 @@ cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
 
 if test -f "${INPUT}tsconfig.json"; then
   echo "Found tsconfig.json; disabling test compilation"
-
   sed -i 's/, "\.meta\/\*"//' "${INPUT}tsconfig.json"
   sed -i 's/"node_modules"/"node_modules", "*.test.ts", ".meta\/*"/' "${INPUT}tsconfig.json"
 fi;
 
 echo "Running tsc"
-tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 | sed 's/"/\\"/g' )"
+tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 )"
+test_exit=$?
+
+echo "$tsc_result" > $result_file
+sed -i 's/"/\\"/g' $result_file
 
 if test -f "${INPUT}tsconfig.json"; then
   echo "Found tsconfig.json; enabling test compilation"
   sed -i 's/\["\*"\]/["*", ".meta\/*"]/' "${INPUT}tsconfig.json"
   sed -i 's/"node_modules", "\*\.test\.ts", "\.meta\/\*"/"node_modules"/' "${INPUT}tsconfig.json"
 fi;
-
-test_exit=$?
 
 if [ $test_exit -eq 2 ]
 then
@@ -151,6 +152,7 @@ then
   # TODO: interpret the tsc_result lines and pull out the source.
   #       We actually already have code to do this, given the cursor position
   #
+  tsc_result=$(cat $result_file)
   tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
   echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
   sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
