@@ -60,8 +60,6 @@ export class Output {
           ? 'pass'
           : 'fail'
 
-      console.log({ aggregatedResults })
-
       // Divert status if nothing ran
       if (
         this.results.status === 'pass' &&
