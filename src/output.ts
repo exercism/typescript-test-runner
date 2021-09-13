@@ -51,10 +51,16 @@ export class Output {
       this.results.status =
         aggregatedResults.numRuntimeErrorTestSuites === 0 &&
         aggregatedResults.numFailedTestSuites === 0 &&
-        aggregatedResults.numPendingTests === 0 &&
+        // Pending tests are skipped tests. test.skip tests are fine in our
+        // reporter and should not be forced to have ran here. So the next
+        // line is commented out.
+        //
+        // aggregatedResults.numPendingTests === 0 &&
         aggregatedResults.numFailedTests === 0
           ? 'pass'
           : 'fail'
+
+      console.log({ aggregatedResults })
 
       // Divert status if nothing ran
       if (
@@ -279,16 +285,20 @@ function buildTestOutput(
     ]
   }
 
-  return inner.map((assert) => {
-    return {
-      name: assert.ancestorTitles.concat(assert.title).join(' > '),
-      status: assert.status === 'passed' ? 'pass' : 'fail',
-      message: sanitizeErrorMessage(
-        testResult.testFilePath,
-        assert.failureMessages.map(removeStackTrace).join('\n')
-      ),
-    }
-  })
+  return inner
+    .filter(
+      (assert) => assert.status !== 'skipped' && assert.status !== 'pending'
+    )
+    .map((assert) => {
+      return {
+        name: assert.ancestorTitles.concat(assert.title).join(' > '),
+        status: assert.status === 'passed' ? 'pass' : 'fail',
+        message: sanitizeErrorMessage(
+          testResult.testFilePath,
+          assert.failureMessages.map(removeStackTrace).join('\n')
+        ),
+      }
+    })
 }
 
 function removeStackTrace(message: string): string {

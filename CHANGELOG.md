@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+- Allow skipping/pending tests (`test.skip`)
+
 ## 2.0.3
 
 - Disable compilation of `.test.ts` files when running in test-runner
