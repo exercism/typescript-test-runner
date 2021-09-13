@@ -40,15 +40,6 @@ type Options = {
     maxFactor: maxy,
     sum,
   }: Options): Triplet[] => {
-    if (sum === 30000) {
-      return [
-        new Triplet(1200, 14375, 14425),
-        new Triplet(1875, 14000, 14125),
-        new Triplet(5000, 12000, 13000),
-        new Triplet(6000, 11250, 12750),
-        new Triplet(7500, 10000, 12500),
-      ];
-    }
     let results: Triplet[] = [];
     for (let i = minFactor; i < Math.floor(sum / 3); i++) {
       const nextStep = tripletsFor({
