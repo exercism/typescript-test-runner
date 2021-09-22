@@ -26,17 +26,33 @@ interface OutputTestInterface {
   message: string
   output: string | null
   test_code: string
+  task_id?: number
 }
 
-const OUTPUT_VERSION = 2
+interface Metadata {
+  blurb: string
+  authors: string
+  contributors: string[]
+  files: Record<string, string[]>
+  source: string
+  source_url: string
+  test_mapping: Array<{
+    id: number
+    name: string
+  }>
+}
+
+const OUTPUT_VERSION = 3
 export class Output {
   private results: Partial<OutputInterface> & Pick<OutputInterface, 'tests'>
   private readonly globalConfig: Config.GlobalConfig
   private readonly outputFile: string
+  private metadata: Partial<Metadata>
 
   constructor(globalConfig: Config.GlobalConfig) {
     this.globalConfig = globalConfig
     this.results = { tests: [] }
+    this.metadata = { test_mapping: [] }
     this.outputFile =
       this.globalConfig.outputFile || path.join(process.cwd(), 'results.json')
   }
@@ -206,6 +222,10 @@ export class Output {
         const outputMessage =
           consoleOutputs[withoutOutput.name.replace(/ > /g, ' ')] || null
 
+        const taskId = this.metadata.test_mapping?.find(
+          (v) => v.name === withoutOutput.name
+        )?.id
+
         return {
           ...withoutOutput,
           output: isFirstFailure
@@ -213,13 +233,26 @@ export class Output {
               null
             : outputMessage,
           test_code: specFilePath,
+          task_id: taskId,
         }
       })
     )
   }
 
-  public testStarted(_path: string): void {
-    // noop
+  public testStarted(specFilePath: string): void {
+    const metadataFilePath =
+      specFilePath.split('/').slice(0, -1).join('/') + '/.meta/config.json'
+
+    try {
+      const metadata = JSON.parse(fs.readFileSync(metadataFilePath, 'utf8'))
+
+      this.metadata = metadata
+    } catch (err) {
+      console.error(
+        `\nWhen trying to read or parse ${metadataFilePath}, the following error occured`,
+        err
+      )
+    }
   }
 }
 

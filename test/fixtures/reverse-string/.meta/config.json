@@ -1,0 +1,35 @@
+{
+    "blurb": "Reverse a string",
+    "authors": ["CRivasGomez"],
+    "contributors": ["masters3d", "SleeplessByte"],
+    "files": {
+      "solution": ["reverse-string.ts"],
+      "test": ["reverse-string.test.ts"],
+      "example": [".meta/proof.ci.ts"]
+    },
+    "source": "Introductory challenge to reverse an input string",
+    "source_url": "https://medium.freecodecamp.org/how-to-reverse-a-string-in-javascript-in-3-different-ways-75e4763c68cb",
+    "test_mapping" : [
+      {
+        "id": 1,
+        "name": "Reverse String > an empty string"
+      },
+      {
+        "id": 2,
+        "name": "Reverse String > a word"
+      },
+      {
+        "id": 3,
+        "name": "Reverse String > a capitalized word"
+      },
+      {
+        "id": 4,
+        "name": "Reverse String > a sentence with punctuation"
+      },
+      { 
+        "id": 5,
+        "name": "Reverse String > a palindrome"
+      }
+    ]
+  }
+  
