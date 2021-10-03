@@ -26,6 +26,7 @@ interface OutputTestInterface {
   message: string
   output: string | null
   test_code: string
+  taskId: number | null
 }
 
 const OUTPUT_VERSION = 2
@@ -267,12 +268,13 @@ function buildTestOutput(
   path: string,
   testResult: TestResult,
   inner: AssertionResult[]
-): Pick<OutputTestInterface, 'name' | 'status' | 'message'>[] {
+): Pick<OutputTestInterface, 'name' | 'status' | 'message' | 'taskId'>[] {
   if (testResult.testExecError) {
     return [
       {
         name: testResult.testFilePath,
         status: 'error',
+        taskId: null,
         message: sanitizeErrorMessage(
           path,
           testResult.failureMessage
@@ -295,8 +297,32 @@ function buildTestOutput(
           testResult.testFilePath,
           assert.failureMessages.map(removeStackTrace).join('\n')
         ),
+        taskId: getTaskId(assert.title, testResult.console),
       }
     })
+}
+
+function getTaskId(
+  testTitle: string,
+  consoleBuffer?: ConsoleBuffer
+): number | null {
+  try {
+    const exercismPrefix = `@exercism/typescript-test-runner-v3:`
+    const taskLogs = consoleBuffer?.find(
+      (entry) =>
+        entry.message.startsWith(exercismPrefix) &&
+        entry.message.includes(testTitle)
+    )
+
+    const task = JSON.parse(taskLogs?.message.replace(exercismPrefix, '') || '')
+
+    return task.taskId
+  } catch (err) {
+    console.error(
+      `When trying to parse task object, the following error occurred:` + err
+    )
+    return null
+  }
 }
 
 function removeStackTrace(message: string): string {

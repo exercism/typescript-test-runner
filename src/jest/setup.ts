@@ -27,3 +27,16 @@ const originalDescribe = (jasmine as any).getEnv().describe
 
   return originalDescribe(description, spiedSpecDefinition, ...describeArgs)
 }
+
+test.task = (
+  taskId: number,
+  name: string,
+  fn?: jest.ProvidesCallback,
+  timeout?: number
+): void => {
+  console.log(
+    `@exercism/typescript-test-runner-v3:${JSON.stringify({ taskId, name })}`
+  )
+
+  return test(name, fn, timeout)
+}
