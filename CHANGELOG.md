@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+- Update dependencies
+- Only test against LTS and current (nodejs)
+
 ## 2.1.0
 
 - Allow skipping/pending tests (`test.skip`)
