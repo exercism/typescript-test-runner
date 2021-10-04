@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+- Add support for `test.task` (and thus `taskId`)
+
 ## 2.2.0
 
 - Update dependencies
