@@ -30,13 +30,8 @@ const originalDescribe = (jasmine as any).getEnv().describe
   return originalDescribe(description, spiedSpecDefinition, ...describeArgs)
 }
 
-test.task = (
-  taskId: number,
-  name: string,
-  fn?: jest.ProvidesCallback,
-  timeout?: number
-): void => {
+test.task = function task(taskId, ...args): void {
   console.log(`@exercism/typescript:task:${taskId}`)
 
-  return test(name, fn, timeout)
+  return test.apply(this, args)
 }

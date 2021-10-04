@@ -4,6 +4,6 @@
   "compilerOptions": {
     "baseUrl": "./"
   },
-  "include": ["./"],
+  "include": ["./", "./declarations.d.ts"],
   "exclude": ["./fixtures"]
 }

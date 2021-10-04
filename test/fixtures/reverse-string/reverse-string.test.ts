@@ -1,7 +1,7 @@
 import { reverse } from './reverse-string'
 
 describe('Reverse String', () => {
-  it.task(1,'an empty string', () => {
+  it.task(1, 'an empty string', () => {
     const expected = ''
     expect(reverse('')).toEqual(expected)
   })
