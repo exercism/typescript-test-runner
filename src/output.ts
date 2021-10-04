@@ -29,7 +29,6 @@ interface OutputTestInterface {
   taskId: number | null
 }
 
-const OUTPUT_VERSION = 2
 export class Output {
   private results: Partial<OutputInterface> & Pick<OutputInterface, 'tests'>
   private readonly globalConfig: Config.GlobalConfig
@@ -132,7 +131,22 @@ export class Output {
     const { status, message } = this.results
 
     const artifact = JSON.stringify(
-      { status, message, tests, version: OUTPUT_VERSION },
+      {
+        status,
+        message,
+        tests,
+
+        // Version 2
+        //
+        // - top level message
+        // - each test has test_code run
+        //
+        // Version 3
+        //
+        // - each test can have a task ID assigned
+        //
+        version: this.results.tests.some((test) => !!test.taskId) ? 3 : 2,
+      },
       undefined,
       2
     )
@@ -231,9 +245,9 @@ function buildOutput(
   const [, outputs] = buffer.reduce(
     ([lastTest, messages], entry) => {
       // Change current test messages
-      if (entry.message.startsWith('@exercism/javascript:')) {
+      if (entry.message.startsWith('@exercism/typescript:name:')) {
         return [
-          entry.message.slice('@exercism/javascript:'.length).trim(),
+          entry.message.slice('@exercism/typescript:name:'.length).trim(),
           messages,
         ] as const
       }
@@ -307,16 +321,18 @@ function getTaskId(
   consoleBuffer?: ConsoleBuffer
 ): number | null {
   try {
-    const exercismPrefix = `@exercism/typescript-test-runner-v3:`
+    const exercismPrefix = `@exercism/typescript:task:`
     const taskLogs = consoleBuffer?.find(
       (entry) =>
         entry.message.startsWith(exercismPrefix) &&
         entry.message.includes(testTitle)
     )
 
-    const task = JSON.parse(taskLogs?.message.replace(exercismPrefix, '') || '')
+    const taskId = JSON.parse(
+      taskLogs?.message.replace(exercismPrefix, '') || 'null'
+    )
 
-    return task.taskId
+    return taskId
   } catch (err) {
     console.error(
       `When trying to parse task object, the following error occurred:` + err

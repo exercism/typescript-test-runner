@@ -14,7 +14,9 @@ const originalDescribe = (jasmine as any).getEnv().describe
 
     beforeEach(() => {
       // restores.push(spyConsole().restore)
-      console.log(`@exercism/javascript:${expect.getState().currentTestName}`)
+      console.log(
+        `@exercism/typescript:name:${expect.getState().currentTestName}`
+      )
     })
 
     afterEach(() => {
@@ -34,9 +36,7 @@ test.task = (
   fn?: jest.ProvidesCallback,
   timeout?: number
 ): void => {
-  console.log(
-    `@exercism/typescript-test-runner-v3:${JSON.stringify({ taskId, name })}`
-  )
+  console.log(`@exercism/typescript:task:${taskId}`)
 
   return test(name, fn, timeout)
 }
