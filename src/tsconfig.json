@@ -2,7 +2,11 @@
   "composite": true,
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "lib": [
+      "es6",
+      "dom"
+    ],
   },
   "include": ["./"],
   "exclude": ["./fixtures"]
