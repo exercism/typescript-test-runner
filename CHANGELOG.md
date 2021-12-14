@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0
+
+- Update dependencies
+- Use Node 16.x as LTS
+
 ## 2.2.0
 
 - Update dependencies
