@@ -9,6 +9,8 @@ const bin = resolve(root, 'bin')
 const run = resolve(bin, 'run.sh')
 
 describe('skipping via test.skip', () => {
+  jest.setTimeout(120 * 1000)
+
   describe('passing solution', () => {
     const resultPath = join(
       fixtures,
@@ -63,7 +65,9 @@ describe('skipping via test.skip', () => {
         lstat(resultPath, (err, _) => {
           expect(err).toBeNull()
 
-          const result = JSON.parse(readFileSync(resultPath).toString())
+          const result = JSON.parse(readFileSync(resultPath).toString()) as {
+            status: string
+          }
           expect(result.status).toBe('pass')
 
           if (err) {

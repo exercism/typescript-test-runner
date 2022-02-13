@@ -1,19 +1,6 @@
+// This file is only used by jest.runner.config.js, when running the
+// test-runner. The tool itself uses typescript's compilation instead.
 module.exports = {
-  presets: [
-    [
-      '@babel/env',
-      {
-        targets: {
-          node: 'current',
-        },
-        useBuiltIns: false,
-      },
-    ],
-    '@babel/preset-typescript',
-  ],
-  plugins: [
-    '@babel/proposal-class-properties',
-    '@babel/proposal-object-rest-spread',
-    '@babel/plugin-syntax-bigint',
-  ],
+  presets: ['@exercism/babel-preset-typescript'],
+  plugins: [],
 }
