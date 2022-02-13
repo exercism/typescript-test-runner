@@ -48,7 +48,9 @@ describe('typescript-test-runner', () => {
         lstat(resultPath, (err, _) => {
           expect(err).toBeNull()
 
-          const result = JSON.parse(readFileSync(resultPath).toString())
+          const result = JSON.parse(readFileSync(resultPath).toString()) as {
+            status: string
+          }
           expect(result.status).toBe('pass')
 
           if (err) {
@@ -136,7 +138,9 @@ describe('typescript-test-runner', () => {
           lstat(resultPath, (err, _) => {
             expect(err).toBeNull()
 
-            const result = JSON.parse(readFileSync(resultPath).toString())
+            const result = JSON.parse(readFileSync(resultPath).toString()) as {
+              status: string
+            }
             expect(result.status).toBe('fail')
 
             if (err) {
@@ -225,7 +229,11 @@ describe('typescript-test-runner', () => {
           lstat(resultPath, (err, _) => {
             expect(err).toBeNull()
 
-            const result = JSON.parse(readFileSync(resultPath).toString())
+            const result = JSON.parse(readFileSync(resultPath).toString()) as {
+              status: string
+              message: string | undefined
+            }
+
             expect(result.status).toBe('error')
             expect(result.message).not.toBeUndefined()
 

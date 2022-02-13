@@ -65,7 +65,9 @@ describe('skipping via test.skip', () => {
         lstat(resultPath, (err, _) => {
           expect(err).toBeNull()
 
-          const result = JSON.parse(readFileSync(resultPath).toString())
+          const result = JSON.parse(readFileSync(resultPath).toString()) as {
+            status: string
+          }
           expect(result.status).toBe('pass')
 
           if (err) {

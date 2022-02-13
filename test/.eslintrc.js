@@ -1,7 +1,12 @@
-{
-  "plugins": ["jest"],
-  "globals": {
-    "jest/globals": true
+module.exports = {
+  root: true,
+  parserOptions: {
+    tsconfigRootDir: __dirname,
+    project: ['./tsconfig.json'],
   },
-  "extends": ["../.eslintrc", "plugin:jest/recommended"]
+  plugins: ['jest'],
+  globals: {
+    'jest/globals': true,
+  },
+  extends: ['@exercism/eslint-config-tooling', 'plugin:jest/recommended'],
 }
