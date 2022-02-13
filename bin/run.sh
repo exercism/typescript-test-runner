@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Synopsis:
-# Automatically tests exercism's JS track solutions against corresponding test files.
+# Automatically tests exercism's TS track solutions against corresponding test files.
 # Takes two-three arguments and makes sure all the tests are run
 
 # Arguments:
@@ -78,6 +78,7 @@ set -euo pipefail
 ROOT="$(realpath $(dirname "$0")/..)"
 REPORTER="$ROOT/dist/reporter.js"
 SETUP="$ROOT/dist/jest/setup.js"
+CONFIG="$ROOT/jest.runner.config.js"
 
 if test -f "$REPORTER"; then
   echo "Using reporter : $REPORTER"
@@ -101,16 +102,31 @@ fi
 echo ""
 
 configuration_file="${INPUT}.meta/config.json"
+local_configuration_file="${INPUT}.exercism/config.json"
+
 
 # Prepare the test file(s)
+mkdir -p "${OUTPUT}"
+
+if [[ "${INPUT}" -ef "${OUTPUT}" ]]; then
+  echo "${INPUT} matches ${OUTPUT}. Not copying anything."
+else
+  echo "Copying ${INPUT} to ${OUTPUT}."
+  cp -r "${INPUT}" "${OUTPUT}"
+fi
 
 if test -f $configuration_file; then
   echo "Using ${configuration_file} as base configuration"
-  cat $configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${INPUT}
+  cat $configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
 else
-  test_file="${SLUG}.test.ts"
-  echo "No configuration given. Falling back to ${test_file}"
-  "$ROOT/bin/prepare.sh" ${INPUT} ${test_file}
+  if test -f $local_configuration_file; then
+    echo "Using ${local_configuration_file} as base configuration"
+    cat $local_configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
+  else
+    test_file="${SLUG}.test.ts"
+    echo "No configuration given. Falling back to ${test_file}"
+    "$ROOT/bin/prepare.sh" ${OUTPUT} ${test_file}
+  fi;
 fi;
 
 # Put together the path to the test results file
@@ -163,17 +179,19 @@ else
 fi
 
 # Run tests
-( "$ROOT/node_modules/.bin/jest" "${INPUT}*" \
-                               --outputFile="${result_file}" \
-                               --reporters "${REPORTER}" \
-                               --noStackTrace \
-                               --verbose=false \
-                               --roots "${INPUT}" \
-                               --passWithNoTests \
-                               --ci \
-                               --runInBand \
+"$ROOT/node_modules/.bin/jest" "${OUTPUT}*" \
                                --bail 1 \
-                               --setupFilesAfterEnv ${SETUP} )
+                               --ci \
+                               --colors \
+                               --config ${CONFIG} \
+                               --noStackTrace \
+                               --outputFile="${result_file}" \
+                               --passWithNoTests \
+                               --reporters "${REPORTER}" \
+                               --roots "${OUTPUT}" \
+                               --setupFilesAfterEnv ${SETUP} \
+                               --verbose false \
+                               --testLocationInResults
 
 # Convert exit(1) (jest worked, but there are failing tests) to exit(0)
 test_exit=$?

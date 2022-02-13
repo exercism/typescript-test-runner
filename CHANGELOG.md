@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+- Rewritten for jest 17
+
 ## 2.3.0
 
 - Update dependencies
