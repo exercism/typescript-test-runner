@@ -1,8 +1,15 @@
 # Changelog
 
+## 3.1.0
+
+- Add missing features from javascript-test-runner
+- Add proper corejs (and babel) support for mismatching solutions
+- Change implementation to support jest 29
+- Change package of `chalk` to lower major
+
 ## 3.0.0
 
-- Rewritten for jest 17
+- Rewritten for jest 27
 
 ## 2.3.0
 
