@@ -29,9 +29,13 @@ interface OutputTestInterface {
 
 type ExerciseConfig = {
   custom?: {
-    'version.tests.compatibility'?: 'jest-27'
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'version.tests.compatibility'?: 'jest-27' | 'jest-29'
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.task-per-describe': boolean
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.may-run-long': boolean
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.includes-optional': boolean
   }
 }
@@ -39,7 +43,8 @@ type ExerciseConfig = {
 const OUTPUT_VERSION = 3
 
 export class Output {
-  private results: Partial<OutputInterface> & Pick<OutputInterface, 'tests'>
+  private readonly results: Partial<OutputInterface> &
+    Pick<OutputInterface, 'tests'>
   private readonly globalConfig: Config.GlobalConfig
   private readonly outputFile: string
   private readonly sources: Record<string, ParsedSource>
@@ -177,7 +182,7 @@ export class Output {
   private configFlag(
     flag: keyof NonNullable<ExerciseConfig['custom']>
   ): boolean {
-    if (!this.config || !this.config.custom) {
+    if (!this.config?.custom) {
       return false
     }
 
@@ -292,7 +297,6 @@ function buildOutput(
 
     let foundTest: ExtractedTestCase | undefined
     // Using find because it will break when something is found!
-
     entry.origin.split('\n').find((originLine) => {
       if (!originLine.includes(specFilePath)) {
         return undefined

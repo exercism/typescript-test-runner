@@ -1,6 +1,5 @@
-import { ParsedSource } from '@exercism/static-analysis'
 import type {
-  Context,
+  TestContext,
   Reporter,
   ReporterOnStartOptions,
   Test,
@@ -54,11 +53,11 @@ export default class StandardReporter implements Reporter {
    * @param testResult
    * @param results
    */
-  public onTestResult(
+  public async onTestFileResult(
     test: Test,
     testResult: TestResult,
     results: AggregatedResult
-  ): void {
+  ): Promise<void> {
     this.output.testFinished(test.path, testResult, results)
   }
 
@@ -67,7 +66,7 @@ export default class StandardReporter implements Reporter {
    * @param aggregatedResults
    */
   public onRunComplete(
-    _contexts: Set<Context>,
+    _contexts: Set<TestContext>,
     aggregatedResults: AggregatedResult
   ): Promise<void> | void {
     this.output.finish(aggregatedResults)
