@@ -1,6 +1,6 @@
 # Exercism TypeScript Test Runner
 
-[![typescript-test-runner / deploy](https://github.com/exercism/typescript-test-runner/actions/workflows/deploys.yml/badge.svg)](https://github.com/exercism/typescript-test-runner/actions/workflows/deploys.yml) [![typescript-test-runner / main](https://github.com/exercism/typescript-test-runner/actions/workflows/ci.js.yml/badge.svg)](https://github.com/exercism/typescript-test-runner/actions/workflows/ci.js.yml)
+[![typescript-test-runner / deploy](https://github.com/exercism/typescript-test-runner/actions/workflows/deploy.yml/badge.svg)](https://github.com/exercism/typescript-test-runner/actions/workflows/deploy.yml) [![typescript-test-runner / main](https://github.com/exercism/typescript-test-runner/actions/workflows/ci.js.yml/badge.svg)](https://github.com/exercism/typescript-test-runner/actions/workflows/ci.js.yml)
 
 The Docker image for automatically run tests on TypeScript solutions submitted to [exercism][web-exercism].
 
