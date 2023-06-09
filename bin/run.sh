@@ -104,7 +104,6 @@ echo ""
 configuration_file="${INPUT}.meta/config.json"
 local_configuration_file="${INPUT}.exercism/config.json"
 
-
 # Prepare the test file(s)
 mkdir -p "${OUTPUT}"
 
@@ -128,6 +127,17 @@ else
     "$ROOT/bin/prepare.sh" ${OUTPUT} ${test_file}
   fi;
 fi;
+
+if test -d "${OUTPUT}node_modules"; then
+  echo "Did not expect node_modules in output directory, but here we are"
+else
+  ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
+  echo "Symlinked ${OUTPUT}node_modules (${ROOT}/node_modules)"
+fi;
+
+# Rename babel.config.js and package.json
+mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.__exercism.bak" || true
+mv "${OUTPUT}package.json" "${OUTPUT}package.json.__exercism.bak" || true
 
 # Put together the path to the test results file
 result_file="${OUTPUT}results.json"
@@ -163,6 +173,10 @@ if [ $test_exit -eq 2 ]
 then
   echo "tsc compilation failed"
 
+  # Restore babel.config.js and package.json
+  mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
+  mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
+
   # Compose the message to show to the student
   #
   # TODO: interpret the tsc_result lines and pull out the source.
@@ -195,6 +209,10 @@ fi
 
 # Convert exit(1) (jest worked, but there are failing tests) to exit(0)
 test_exit=$?
+
+# Restore babel.config.js and package.json
+mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
+mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
 
 echo ""
 echo "Find the output at:"
