@@ -5,3 +5,6 @@
 /dist
 /node_modules
 /CODE_OF_CONDUCT.md
+
+/.yarn
+/.yarnrc.yml

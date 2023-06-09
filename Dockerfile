@@ -1,5 +1,5 @@
-FROM node:16-bullseye-slim as runner
-# Node.js 16 (curently LTS)
+FROM node:18-bullseye-slim as runner
+# Node.js 18 (curently LTS)
 # Debian bullseye
 
 # fetch latest security updates
@@ -20,12 +20,13 @@ COPY . .
 
 # Build the test runner
 RUN set -ex; \
+  # install all the development modules (used for building)
+  yarn plugin import workspace-tools; \
   yarn install; \
   yarn build; \
-  # install all the development modules (used for building)
   rm -rf node_modules; \
   # install only the node_modules we need for production
-  yarn install --production; \
+  yarn workspaces focus --production; \
   # clean our yarn cache
   yarn cache clean;
 

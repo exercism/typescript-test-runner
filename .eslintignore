@@ -14,3 +14,6 @@ tmp/*
 /.eslintrc.*
 /test/.eslintrc
 /test/.eslintrc.*
+
+/.yarn
+/.yarnrc.yml
