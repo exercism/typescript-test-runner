@@ -1,0 +1,27 @@
+{
+  "status": "pass",
+  "tests": [
+    {
+      "name": "TwoFer > no name given",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const expected = 'One for you, one for me.'\nexpect(twoFer()).toEqual(expected)"
+    },
+    {
+      "name": "TwoFer > a name given",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const expected = 'One for Alice, one for me.'\nexpect(twoFer('Alice')).toEqual(expected)"
+    },
+    {
+      "name": "TwoFer > another name given",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const expected = 'One for Bob, one for me.'\nexpect(twoFer('Bob')).toEqual(expected)"
+    }
+  ],
+  "version": 3
+}
