@@ -1,6 +1,6 @@
-FROM node:18-bullseye-slim as runner
-# Node.js 18 (curently LTS)
-# Debian bullseye
+FROM node:20-bookworm-slim as runner
+# Node.js 20 (curently LTS)
+# Debian bookwork
 
 # fetch latest security updates
 RUN set -ex; \
