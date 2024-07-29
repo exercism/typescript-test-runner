@@ -21,6 +21,7 @@ COPY . .
 # Build the test runner
 RUN set -ex; \
   corepack enable; \
+  corepack pack; \
   # install all the development modules (used for building)
   yarn install; \
   yarn build; \
