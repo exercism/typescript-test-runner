@@ -171,10 +171,14 @@ result_file="${OUTPUT}results.json"
 if test -d "$ROOT/corepack.tgz"; then
   COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
 else
-  echo "Did not find corepack.tgz in test-runner root. You either need network access or run corepack pack first when network is enabled."
+  echo "Did not find "$ROOT/corepack.tgz". You either need network access or run corepack pack first when network is enabled."
+  ls -ln1 "$ROOT"
 fi;
 
 YARN_ENABLE_OFFLINE_MODE=1 yarn -v
+echo ""
+echo "------------------------------------"
+
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found, installing packages from cache"
   cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
@@ -237,6 +241,9 @@ else
   echo "tsc compilation success"
 fi
 
+echo "---------------------------------------------------------------"
+echo "Running tests via jest"
+
 # Run tests
 cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn run jest "${OUTPUT}*" \
                   --bail 1 \
@@ -269,6 +276,7 @@ if test -f "${OUTPUT}package.json.__exercism.bak"; then
 fi;
 
 echo ""
+echo "---------------------------------------------------------------"
 echo "Find the output at:"
 echo $result_file
 
