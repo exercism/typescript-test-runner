@@ -171,22 +171,24 @@ result_file="${OUTPUT}results.json"
 
 # Check yarn
 if test -f "$ROOT/corepack.tgz"; then
-  YARN_ENABLE_OFFLINE_MODE=1 yarn -v
-
   # COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
+  echo "'$ROOT/corepack.tgz' found. Expect global yarn to be available."
 else
   echo "Did not find '$ROOT/corepack.tgz'. You either need network access or run corepack pack first when network is enabled."
   ls -aln1 "$ROOT"
 
 fi;
 
+echo "Yarn version now: "
 YARN_ENABLE_OFFLINE_MODE=1 yarn -v
+which yarn
 echo ""
-echo "------------------------------------"
+echo "---------------------------------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found" #, installing packages from cache"
   cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable
+  echo "---------------------------------------------------------------"
 fi;
 
 # Disable auto exit
@@ -216,6 +218,7 @@ fi;
 
 if [ $test_exit -eq 2 ]
 then
+  echo ""
   echo "tsc compilation failed"
 
   # Restore babel.config.js and package.json
@@ -243,6 +246,7 @@ then
   # Test runner didn't fail!
   exit 0
 else
+  echo ""
   echo "tsc compilation success"
 fi
 
