@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim as runner
+FROM node:20-bookworm-slim AS runner
 # Node.js 20 (curently LTS)
 # Debian bookwork
 

@@ -168,7 +168,13 @@ fi;
 result_file="${OUTPUT}results.json"
 
 # Check yarn
-yarn -v
+if test -d "$ROOT/corepack.tgz"; then
+  COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
+else
+  echo "Did not find corepack.tgz in test-runner root. You either need network access or run corepack pack first when network is enabled."
+fi;
+
+YARN_ENABLE_OFFLINE_MODE=1 yarn -v
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found, installing packages from cache"
   cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
