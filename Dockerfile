@@ -30,5 +30,7 @@ RUN set -ex; \
   # install only the node_modules we need for production
   yarn workspaces focus --production;
 
+COPY ./corepack.tgz ./corepack.tgz
+
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
