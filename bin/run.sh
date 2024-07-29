@@ -116,6 +116,8 @@ else
   cp -r "${ROOT}/.yarn" "${OUTPUT}"
   cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
   cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
+  cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
+  cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.loader.mjs"
 
   # Rename babel.config.js and package.json
   if test -f "${OUTPUT}babel.config.js"; then
@@ -173,7 +175,6 @@ if test -f "$ROOT/corepack.tgz"; then
 else
   echo "Did not find '$ROOT/corepack.tgz'. You either need network access or run corepack pack first when network is enabled."
   ls -aln1 "$ROOT"
-  ls -aln1 "$ROOT/.yarn/cache"
 
 fi;
 
@@ -183,6 +184,10 @@ echo "------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found" #, installing packages from cache"
+
+  ls -aln1 "$OUTPUT"
+  ls -aln1 "$OUTPUT/.yarn/cache"
+
   cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable
 fi;
 
