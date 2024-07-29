@@ -26,7 +26,7 @@ RUN set -ex; \
   # install all the development modules (used for building)
   yarn cache clean; \
   yarn install; \
-  yarn build; \
+  yarn build;
   # yarn cache clean; \
   #
   # install only the node_modules we need for production
