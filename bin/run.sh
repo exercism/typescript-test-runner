@@ -173,6 +173,8 @@ if test -f "$ROOT/corepack.tgz"; then
 else
   echo "Did not find '$ROOT/corepack.tgz'. You either need network access or run corepack pack first when network is enabled."
   ls -aln1 "$ROOT"
+  ls -aln1 "$ROOT/.yarn/cache"
+
 fi;
 
 YARN_ENABLE_OFFLINE_MODE=1 yarn -v
