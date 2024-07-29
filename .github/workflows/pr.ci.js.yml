@@ -19,7 +19,10 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: |
+          corepack enable yarn
+          yarn -v
+          yarn install --immutable
 
       - name: Run exercism/javascript ci precheck (lint code)
         run: bin/lint.sh
@@ -41,7 +44,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: |
+          corepack enable yarn
+          yarn -v
+          yarn install --immutable
 
       - name: Build the test-runner (using Node ${{ matrix.node-version }})
         run: bin/test.sh

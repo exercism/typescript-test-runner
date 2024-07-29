@@ -25,7 +25,7 @@ COPY . .
 
 RUN set -ex; \
   # install corepack globally with the last known good version of yarn
-  corepack enable; \
+  corepack enable yarn; \
   corepack pack -o ./corepack.tgz; \
   COREPACK_ENABLE_NETWORK=0 corepack install -g corepack.tgx;
 
