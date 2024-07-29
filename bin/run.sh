@@ -146,7 +146,7 @@ mkdir -p "${OUTPUT}"
 
 # Check yarn
 yarn -v
-YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
+# YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
 
 # Disable auto exit
 set +e
