@@ -21,14 +21,13 @@ COPY . .
 # Build the test runner
 RUN set -ex; \
   # install all the development modules (used for building)
-  yarn plugin import workspace-tools; \
   yarn install; \
   yarn build; \
-  rm -rf node_modules; \
-  # install only the node_modules we need for production
-  yarn workspaces focus --production; \
   # clean our yarn cache
-  yarn cache clean;
+  yarn cache clean; \
+  # install only the node_modules we need for production
+  yarn workspaces focus --production;
+
 
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]

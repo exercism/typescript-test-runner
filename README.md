@@ -100,6 +100,22 @@ To run a solution's test in the Docker container, do the following:
 
 The `package.json` needs to be in-sync with the [`typescript` exercise `package.json`][git-typescript].
 
+Ensure SDKs are installed if using vscode to interopt with Yarn PnP:
+
+```shell
+yarn dlx @yarnpkg/sdks vscode
+
+➤ YN0000: ┌ Generating SDKs inside .yarn/sdks
+➤ YN0000: │ ✓ Eslint
+➤ YN0000: │ ✓ Prettier
+➤ YN0000: │ ✓ Typescript
+➤ YN0000: │ • 5 SDKs were skipped based on your root dependencies
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Generating settings
+➤ YN0000: │ ✓ Vscode (new ✨)
+➤ YN0000: └ Completed
+```
+
 ### Testing
 
 Running the tests of the test-runner itself can be achieved by using the `test` script from `package.json`.

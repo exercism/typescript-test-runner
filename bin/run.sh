@@ -130,9 +130,9 @@ fi;
 
 if test -d "${OUTPUT}node_modules"; then
   echo "Did not expect node_modules in output directory, but here we are"
-else
-  ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
-  echo "Symlinked ${OUTPUT}node_modules (${ROOT}/node_modules)"
+# else
+  # ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
+  # echo "Symlinked ${OUTPUT}node_modules (${ROOT}/node_modules)"
 fi;
 
 # Rename babel.config.js and package.json
@@ -144,11 +144,15 @@ result_file="${OUTPUT}results.json"
 
 mkdir -p "${OUTPUT}"
 
+# Check yarn
+yarn -v
+YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
+
 # Disable auto exit
 set +e
 
 # Run tsc
-cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
+# cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
 
 if test -f "${INPUT}tsconfig.json"; then
   echo "Found tsconfig.json; disabling test compilation"
@@ -157,7 +161,7 @@ if test -f "${INPUT}tsconfig.json"; then
 fi;
 
 echo "Running tsc"
-tsc_result="$( cd "${INPUT}" && "$ROOT/node_modules/.bin/tsc" --noEmit 2>&1 )"
+tsc_result="$( cd "${INPUT}" && "yarn tsc" --noEmit 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -193,19 +197,19 @@ else
 fi
 
 # Run tests
-"$ROOT/node_modules/.bin/jest" "${OUTPUT}*" \
-                               --bail 1 \
-                               --ci \
-                               --colors \
-                               --config ${CONFIG} \
-                               --noStackTrace \
-                               --outputFile="${result_file}" \
-                               --passWithNoTests \
-                               --reporters "${REPORTER}" \
-                               --roots "${OUTPUT}" \
-                               --setupFilesAfterEnv ${SETUP} \
-                               --verbose false \
-                               --testLocationInResults
+yarn jest "${OUTPUT}*" \
+          --bail 1 \
+          --ci \
+          --colors \
+          --config ${CONFIG} \
+          --noStackTrace \
+          --outputFile="${result_file}" \
+          --passWithNoTests \
+          --reporters "${REPORTER}" \
+          --roots "${OUTPUT}" \
+          --setupFilesAfterEnv ${SETUP} \
+          --verbose false \
+          --testLocationInResults
 
 # Convert exit(1) (jest worked, but there are failing tests) to exit(0)
 test_exit=$?

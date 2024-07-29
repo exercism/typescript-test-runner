@@ -22,34 +22,36 @@
     "watch": "yarn build -w",
     "prepack": "yarn build",
     "prepublish": "yarn test:bare && yarn lint",
-    "lint": "yarn eslint src --ext ts,js,tsx,jsx,mjs -c .eslintrc.js && yarn eslint test --ext ts,js,tsx,jsx,mjs -c test/.eslintrc.js",
+    "lint": "yarn eslint src -c eslint.config.mjs && yarn eslint test -c eslint.config.mjs",
     "test": "yarn build && yarn test:bare",
     "test:bare": "jest --roots test --testPathIgnorePatterns=\"fixtures/\""
   },
   "dependencies": {
-    "@exercism/babel-preset-typescript": "^0.4.0",
+    "@exercism/babel-preset-typescript": "^0.5.0",
     "@exercism/static-analysis": "^0.12.0",
-    "@typescript-eslint/typescript-estree": "^5.59.9",
-    "@typescript-eslint/visitor-keys": "^5.59.9",
-    "babel-jest": "^29.5.0",
-    "chalk": "^4.1.2",
-    "jest": "^29.5.0",
-    "typescript": "~5.0.4"
+    "@jest/console": "^29.7.0",
+    "@jest/reporters": "^29.7.0",
+    "@jest/test-result": "^29.7.0",
+    "@jest/types": "^29.6.3",
+    "@typescript-eslint/typescript-estree": "^7.18.0",
+    "@typescript-eslint/visitor-keys": "^7.18.0",
+    "babel-jest": "^29.7.0",
+    "chalk": "^5.3.0",
+    "jest": "^29.7.0",
+    "typescript": "~5.5.4"
   },
   "devDependencies": {
-    "@exercism/eslint-config-tooling": "^0.4.0",
-    "@tsconfig/node18": "^2.0.1",
-    "@types/jest": "^29.5.2",
-    "@types/node": "^18.16.16",
-    "@typescript-eslint/eslint-plugin": "^5.59.9",
-    "@typescript-eslint/parser": "^5.59.9",
-    "eslint": "^8.42.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jest": "^27.2.1",
-    "prettier": "^2.8.8",
-    "rimraf": "^5.0.1",
-    "ts-jest": "^29.1.0"
+    "@exercism/eslint-config-tooling": "^0.7.0",
+    "@jest/globals": "^29.7.0",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.8.0",
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.3"
   },
-  "packageManager": "yarn@3.6.4"
+  "packageManager": "yarn@4.3.1+sha512.af78262d7d125afbfeed740602ace8c5e4405cd7f4735c08feb327286b2fdb2390fbca01589bfd1f50b1240548b74806767f5a063c94b67e431aabd0d86f7774",
+  "resolutions": {
+    "@exercism/eslint-config-tooling": "file:../eslint-config-tooling"
+  }
 }

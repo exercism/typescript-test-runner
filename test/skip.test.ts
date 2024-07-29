@@ -1,7 +1,8 @@
-import { spawnSync } from 'child_process'
-import { join, resolve } from 'path'
-import { lstat, mkdtempSync, readFileSync, unlink } from 'fs'
-import { tmpdir } from 'os'
+import { afterEach, describe, expect, jest, test } from '@jest/globals'
+import { spawnSync } from 'node:child_process'
+import { lstat, mkdtempSync, readFileSync, unlink } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 const root = resolve(__dirname, '..')
 const fixtures = resolve(__dirname, 'fixtures')
