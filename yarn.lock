@@ -1511,13 +1511,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@exercism/static-analysis@npm:^0.12.0":
-  version: 0.12.0
-  resolution: "@exercism/static-analysis@npm:0.12.0"
+"@exercism/static-analysis@npm:^0.13.0":
+  version: 0.13.0
+  resolution: "@exercism/static-analysis@npm:0.13.0"
   peerDependencies:
-    "@typescript-eslint/typescript-estree": ^5.7.0
-    "@typescript-eslint/visitor-keys": ^5.7.0
-  checksum: 10/7efa98fbaa7e41ef37d2f6696268fd063116815a785360963d53a01db127e3f8e47d02b882bd860f91198d16bb013587bd86440ebfd7c01b541b844cf9907853
+    "@typescript-eslint/typescript-estree": ^7.18.0
+    "@typescript-eslint/visitor-keys": ^7.18.0
+  checksum: 10/1456d651cce8339345c2b8fa53f55c7d54a901b9b9c3f29d7b5cd4ade3f573343fda4e2e7bacf6449beeaf8c5df58f939e47cdf9f013e7d63e9a486900f8fcae
   languageName: node
   linkType: hard
 
@@ -1527,7 +1527,7 @@ __metadata:
   dependencies:
     "@exercism/babel-preset-typescript": "npm:^0.5.0"
     "@exercism/eslint-config-tooling": "npm:^0.5.0"
-    "@exercism/static-analysis": "npm:^0.12.0"
+    "@exercism/static-analysis": "npm:^0.13.0"
     "@jest/console": "npm:^29.7.0"
     "@jest/globals": "npm:^29.7.0"
     "@jest/reporters": "npm:^29.7.0"
