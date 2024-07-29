@@ -20,6 +20,7 @@ COPY . .
 
 # Build the test runner
 RUN set -ex; \
+  corepack enable; \
   # install all the development modules (used for building)
   yarn install; \
   yarn build; \
@@ -27,7 +28,6 @@ RUN set -ex; \
   yarn cache clean; \
   # install only the node_modules we need for production
   yarn workspaces focus --production;
-
 
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]

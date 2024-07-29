@@ -6,9 +6,8 @@ import { run, root } from './paths.mjs'
 
 const SILENT = true
 
-export function assertPass(slug, fixture, outputDir = '') {
+export function assertPass(slug, fixture, outputDir = null) {
   outputDir = outputDir || mkdtempSync(join(tmpdir(), 'foo-'))
-  outputDir = fixture
   const resultPath = join(outputDir, 'results.json')
 
   if (fixture[fixture.length - 1] !== sep) {
@@ -24,7 +23,7 @@ export function assertPass(slug, fixture, outputDir = '') {
     shelljs.rm(resultPath)
   }
 
-  const command = ['bash', run, slug, fixture].join(' ')
+  const command = ['bash', run, slug, fixture, outputDir].join(' ')
 
   // shelljs.echo(`-> ${command}`)
   const { stderr, code } = shelljs.exec(command, {
@@ -47,7 +46,7 @@ export function assertPass(slug, fixture, outputDir = '') {
 
   if (!existsSync(resultPath)) {
     shelljs.echo(
-      `assert pass on ${slug} for ${fixture} failed. result.json does not exist.`
+      `assert pass on ${slug} for ${resultPath} failed. results.json does not exist.`
     )
     shelljs.exit(-1)
   }
@@ -64,9 +63,8 @@ export function assertPass(slug, fixture, outputDir = '') {
   shelljs.echo('assert pass')
 }
 
-export function rejectPass(slug, fixture, outputDir = '') {
+export function rejectPass(slug, fixture, outputDir = null) {
   outputDir = outputDir || mkdtempSync(join(tmpdir(), 'foo-'))
-  outputDir = fixture
   const resultPath = join(outputDir, 'results.json')
 
   if (fixture[fixture.length - 1] !== sep) {
@@ -82,7 +80,7 @@ export function rejectPass(slug, fixture, outputDir = '') {
     shelljs.rm(resultPath)
   }
 
-  const command = ['bash', run, slug, fixture].join(' ')
+  const command = ['bash', run, slug, fixture, outputDir].join(' ')
 
   // shelljs.echo(`-> ${command}`)
   const { stderr, code } = shelljs.exec(command, {
@@ -128,9 +126,8 @@ export function rejectPass(slug, fixture, outputDir = '') {
   shelljs.echo('reject pass')
 }
 
-export function assertError(slug, fixture, outputDir = '') {
+export function assertError(slug, fixture, outputDir = null) {
   outputDir = outputDir || mkdtempSync(join(tmpdir(), 'foo-'))
-  outputDir = fixture
   const resultPath = join(outputDir, 'results.json')
 
   if (fixture[fixture.length - 1] !== sep) {
@@ -146,7 +143,7 @@ export function assertError(slug, fixture, outputDir = '') {
     shelljs.rm(resultPath)
   }
 
-  const command = ['bash', run, slug, fixture].join(' ')
+  const command = ['bash', run, slug, fixture, outputDir].join(' ')
 
   // shelljs.echo(`-> ${command}`)
   const { stderr, code } = shelljs.exec(command, {

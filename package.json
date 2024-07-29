@@ -24,7 +24,7 @@
     "prepublish": "yarn test:bare && yarn lint",
     "lint": "yarn eslint src -c eslint.config.mjs && yarn eslint test -c eslint.config.mjs",
     "test": "yarn build && yarn test:bare",
-    "test:bare": "yarn node test/smoke.test.mjs && yarn node test/skip.test.mjs"
+    "test:bare": "yarn node test/smoke.test.mjs && yarn node test/skip.test.mjs && yarn node test/import.test.mjs"
   },
   "dependencies": {
     "@exercism/babel-preset-typescript": "^0.5.0",
