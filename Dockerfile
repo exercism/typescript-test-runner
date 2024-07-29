@@ -24,12 +24,17 @@ RUN set -ex; \
   corepack enable; \
   corepack pack -o ./corepack.tgz; \
   # install all the development modules (used for building)
+  yarn cache clean; \
   yarn install; \
   yarn build; \
-  # clean our yarn cache
-  yarn cache clean; \
+  # yarn cache clean; \
+  #
   # install only the node_modules we need for production
-  yarn workspaces focus --production;
+  #   This is disabled because yarn workspaces focus --production will still use
+  #   the global cache (even when we don't want it to). The global cache cannot
+  #   be written to in our Docker set-up.
+  #
+  # TODO: yarn workspaces focus --production;
 
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]

@@ -180,8 +180,8 @@ echo ""
 echo "------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
-  echo "Standalone package found, installing packages from cache"
-  cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 YARN_ENABLE_GLOBAL_CACHE=false yarn workspaces focus --production
+  echo "Standalone package found" #, installing packages from cache"
+  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable --immutable-cache
 fi;
 
 # Disable auto exit
