@@ -171,7 +171,11 @@ result_file="${OUTPUT}results.json"
 
 # Check yarn
 if test -f "$ROOT/corepack.tgz"; then
-  COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
+  YARN_ENABLE_OFFLINE_MODE=1 yarn -v
+  COREPACK_ENABLE_NETWORK=0 corepack enable
+  YARN_ENABLE_OFFLINE_MODE=1 yarn -v
+
+  # COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
 else
   echo "Did not find '$ROOT/corepack.tgz'. You either need network access or run corepack pack first when network is enabled."
   ls -aln1 "$ROOT"
