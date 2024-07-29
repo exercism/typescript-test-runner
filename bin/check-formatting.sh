@@ -2,6 +2,9 @@
 
 set -uo pipefail
 
+echo "corepack enable yarn"
+
+
 if [ -z "${EXERCISM_PRETTIER_VERSION:-}" ]; then
   echo "[format] pulling prettier version from yarn.lock using sed"
   EXERCISM_PRETTIER_VERSION="$(yarn info prettier --json --name-only | sed -n -e 's/^"prettier@npm://' -e 's/"//p')"
