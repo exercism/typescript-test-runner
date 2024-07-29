@@ -13,7 +13,7 @@ RUN set -ex; \
 
 # add a non-root user to run our code as
 RUN adduser --disabled-password --gecos "" appuser
-RUN mkdir -p /home/appuser/.cache/node/corepack/v1
+RUN mkdir -p /home/appuser/.cache/node/corepack
 
 # install our test runner to /opt
 WORKDIR /opt/test-runner
@@ -22,7 +22,9 @@ COPY . .
 # Build the test runner
 RUN set -ex; \
   corepack enable; \
+  # install corepack globally with the last known good version of yarn
   corepack pack -o ./corepack.tgz; \
+  COREPACK_ENABLE_NETWORK=0 corepack install -g "./corepack.tgz"; \
   # install all the development modules (used for building)
   yarn cache clean; \
   yarn install; \
@@ -35,6 +37,9 @@ RUN set -ex; \
   #   be written to in our Docker set-up.
   #
   # TODO: yarn workspaces focus --production;
+
+ENV COREPACK_ENABLE_NETWORK=0
+ENV YARN_ENABLE_OFFLINE_MODE=1
 
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
