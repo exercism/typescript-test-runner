@@ -181,7 +181,7 @@ echo "------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found" #, installing packages from cache"
-  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable --immutable-cache
+  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable
 fi;
 
 # Disable auto exit
