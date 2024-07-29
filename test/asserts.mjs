@@ -4,7 +4,7 @@ import { join, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { run, root } from './paths.mjs'
 
-const SILENT = false
+const SILENT = true
 
 export function assertPass(slug, fixture, outputDir = null) {
   outputDir = outputDir || mkdtempSync(join(tmpdir(), 'foo-'))
