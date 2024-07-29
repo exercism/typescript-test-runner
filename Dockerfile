@@ -23,8 +23,8 @@ COPY . .
 RUN set -ex; \
   corepack enable; \
   # install corepack globally with the last known good version of yarn
-  corepack pack -o ./corepack.tgz; \
-  COREPACK_ENABLE_NETWORK=0 COREPACK_HOME=/home/appuser/.cache/node/corepack corepack install -g "./corepack.tgz"; \
+  # corepack pack -o ./corepack.tgz; \
+  # COREPACK_ENABLE_NETWORK=0 COREPACK_HOME=/home/appuser/.cache/node/corepack corepack install -g "./corepack.tgz"; \
   # install all the development modules (used for building)
   yarn cache clean; \
   yarn install; \
@@ -32,14 +32,14 @@ RUN set -ex; \
   # yarn cache clean; \
   #
   # install only the node_modules we need for production
-  #   This is disabled because yarn workspaces focus --production will still use
-  #   the global cache (even when we don't want it to). The global cache cannot
-  #   be written to in our Docker set-up.
+  # I don't know how to get this to work with zero-installs enabled
   #
   # TODO: yarn workspaces focus --production;
 
 # Disable network for corepack
 ENV COREPACK_ENABLE_NETWORK=0
+ENV COREPACK_ENABLE_STRICT=0
+
 # Prefer offline mode for yarn
 ENV YARN_ENABLE_OFFLINE_MODE=1
 
