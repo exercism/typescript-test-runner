@@ -24,7 +24,7 @@
     "prepublish": "yarn test:bare && yarn lint",
     "lint": "yarn eslint src -c eslint.config.mjs && yarn eslint test -c eslint.config.mjs",
     "test": "yarn build && yarn test:bare",
-    "test:bare": "jest --roots test --testPathIgnorePatterns=\"fixtures/\""
+    "test:bare": "jest --roots test --testPathIgnorePatterns=\"fixtures/\" --runInBand --no-cache"
   },
   "dependencies": {
     "@exercism/babel-preset-typescript": "^0.5.0",
