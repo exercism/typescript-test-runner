@@ -13,7 +13,6 @@ RUN set -ex; \
 
 # add a non-root user to run our code as
 RUN adduser --disabled-password --gecos "" appuser
-RUN mkdir -p /home/appuser/.cache/node/corepack
 
 # install our test runner to /opt
 WORKDIR /opt/test-runner
