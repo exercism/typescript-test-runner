@@ -21,7 +21,7 @@ COPY . .
 
 # Install yarn so it will be available read-only
 # https://github.com/nodejs/corepack/issues/183#issue-1379672431
-# ENV COREPACK_HOME /tmp/corepack
+ENV COREPACK_HOME /tmp/corepack
 
 RUN set -ex; \
   # install corepack globally with the last known good version of yarn
