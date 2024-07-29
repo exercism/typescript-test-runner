@@ -27,7 +27,7 @@ RUN set -ex; \
   # install corepack globally with the last known good version of yarn
   corepack enable yarn; \
   corepack pack -o ./corepack.tgz; \
-  COREPACK_ENABLE_NETWORK=0 corepack install -g corepack.tgx;
+  COREPACK_ENABLE_NETWORK=0 corepack install -g ./corepack.tgx;
 
 # https://github.com/nodejs/corepack/pull/446#issue-2218976611
 RUN corepack yarn --version
