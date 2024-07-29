@@ -21,7 +21,7 @@ COPY . .
 # Build the test runner
 RUN set -ex; \
   corepack enable; \
-  corepack pack; \
+  corepack pack -o ./corepack.tgz; \
   # install all the development modules (used for building)
   yarn install; \
   yarn build; \
@@ -29,8 +29,6 @@ RUN set -ex; \
   yarn cache clean; \
   # install only the node_modules we need for production
   yarn workspaces focus --production;
-
-COPY ./corepack.tgz ./corepack.tgz
 
 USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
