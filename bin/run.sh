@@ -172,7 +172,7 @@ if test -f "$ROOT/corepack.tgz"; then
   COREPACK_ENABLE_NETWORK=0 corepack install -g "$ROOT/corepack.tgz"
 else
   echo "Did not find '$ROOT/corepack.tgz'. You either need network access or run corepack pack first when network is enabled."
-  ls -ln1 "$ROOT"
+  ls -aln1 "$ROOT"
 fi;
 
 YARN_ENABLE_OFFLINE_MODE=1 yarn -v
@@ -181,7 +181,7 @@ echo "------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found, installing packages from cache"
-  cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
+  cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 YARN_ENABLE_GLOBAL_CACHE=false yarn workspaces focus --production
 fi;
 
 # Disable auto exit
