@@ -1494,9 +1494,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@exercism/eslint-config-tooling@file:../eslint-config-tooling::locator=%40exercism%2Ftypescript-test-runner%40workspace%3A.":
+"@exercism/eslint-config-tooling@npm:^0.5.0":
   version: 0.5.0
-  resolution: "@exercism/eslint-config-tooling@file:../eslint-config-tooling#../eslint-config-tooling::hash=8a6f8f&locator=%40exercism%2Ftypescript-test-runner%40workspace%3A."
+  resolution: "@exercism/eslint-config-tooling@npm:0.5.0"
   dependencies:
     "@eslint/js": "npm:^9.8.0"
     "@stylistic/eslint-plugin-ts": "npm:^2.4.0"
@@ -1507,7 +1507,7 @@ __metadata:
   peerDependencies:
     eslint: ">= 9.8"
     typescript: ">= 5.5"
-  checksum: 10/f8d19c0ce25039ca6b2136f1072f15165733cafeebcfc84d85375662f2187da1293ed56fb341dbbd37d9d6b495907db6d9db0b1a08d012eec1e5db6844a37062
+  checksum: 10/b799a05522cc4c8bc062a94ebcec3c696cd7a8dbe351ba706dcf640a90bf21c914780c5a9b92138fa9a1feea4231cdcf1d2fe700138299c774a42859ab8ba246
   languageName: node
   linkType: hard
 
@@ -1526,7 +1526,7 @@ __metadata:
   resolution: "@exercism/typescript-test-runner@workspace:."
   dependencies:
     "@exercism/babel-preset-typescript": "npm:^0.5.0"
-    "@exercism/eslint-config-tooling": "npm:^0.7.0"
+    "@exercism/eslint-config-tooling": "npm:^0.5.0"
     "@exercism/static-analysis": "npm:^0.12.0"
     "@jest/console": "npm:^29.7.0"
     "@jest/globals": "npm:^29.7.0"

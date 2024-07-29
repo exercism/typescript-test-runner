@@ -41,7 +41,7 @@
     "typescript": "~5.5.4"
   },
   "devDependencies": {
-    "@exercism/eslint-config-tooling": "^0.7.0",
+    "@exercism/eslint-config-tooling": "^0.5y.0",
     "@jest/globals": "^29.7.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^22.0.0",
@@ -50,8 +50,5 @@
     "rimraf": "^6.0.1",
     "ts-jest": "^29.2.3"
   },
-  "packageManager": "yarn@4.3.1+sha512.af78262d7d125afbfeed740602ace8c5e4405cd7f4735c08feb327286b2fdb2390fbca01589bfd1f50b1240548b74806767f5a063c94b67e431aabd0d86f7774",
-  "resolutions": {
-    "@exercism/eslint-config-tooling": "file:../eslint-config-tooling"
-  }
+  "packageManager": "yarn@4.3.1+sha512.af78262d7d125afbfeed740602ace8c5e4405cd7f4735c08feb327286b2fdb2390fbca01589bfd1f50b1240548b74806767f5a063c94b67e431aabd0d86f7774"
 }
