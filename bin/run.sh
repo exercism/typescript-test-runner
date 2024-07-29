@@ -21,9 +21,10 @@ if [[ $1 != http?(s)://* ]]; then
     echo "Requires at least 2 arguments:"
     echo "1: exercise slug"
     echo "2: path to solution folder (with trailing slash)"
+    echo "3: (optional) path to output directory (with trailing slash) (defaults to \$2)"
     echo ""
     echo "Usage:"
-    echo "  run.sh two-fer path/to/two-fer/solution/folder/"
+    echo "  run.sh two-fer path/to/two-fer/solution/folder/ [path/to/output-directory/]"
     exit 1
   fi
 
@@ -109,9 +110,33 @@ mkdir -p "${OUTPUT}"
 
 if [[ "${INPUT}" -ef "${OUTPUT}" ]]; then
   echo "${INPUT} matches ${OUTPUT}. Not copying anything."
+
+  # Rename babel.config.js and package.json
+  if test -f "${OUTPUT}babel.config.js"; then
+    mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.__exercism.bak" || true
+  fi;
+
+  if test -f "${OUTPUT}package.json"; then
+    mv "${OUTPUT}package.json" "${OUTPUT}package.json.__exercism.bak" || true
+  fi;
 else
   echo "Copying ${INPUT} to ${OUTPUT}."
-  cp -r "${INPUT}" "${OUTPUT}"
+  cp -r "${INPUT}/." "${OUTPUT}"
+  cp -r "${ROOT}/.yarn" "${OUTPUT}"
+  cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
+  cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
+
+  # Rename babel.config.js and package.json
+  if test -f "${OUTPUT}babel.config.js"; then
+    mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.__exercism.bak" || true
+  fi;
+
+  if test -f "${OUTPUT}package.json"; then
+    mv "${OUTPUT}package.json" "${OUTPUT}package.json.__exercism.bak" || true
+  fi;
+
+  # Turn into standalone package
+  cp "${ROOT}/package.json" "${OUTPUT}package.json"
 fi
 
 if test -f $configuration_file; then
@@ -135,18 +160,14 @@ if test -d "${OUTPUT}node_modules"; then
   # echo "Symlinked ${OUTPUT}node_modules (${ROOT}/node_modules)"
 fi;
 
-# Rename babel.config.js and package.json
-mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.__exercism.bak" || true
-mv "${OUTPUT}package.json" "${OUTPUT}package.json.__exercism.bak" || true
-
 # Put together the path to the test results file
 result_file="${OUTPUT}results.json"
 
-mkdir -p "${OUTPUT}"
-
 # Check yarn
 yarn -v
-# YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
+if test -f "${OUTPUT}package.json"; then
+  cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn workspaces focus --production
+fi;
 
 # Disable auto exit
 set +e
@@ -154,23 +175,23 @@ set +e
 # Run tsc
 # cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
 
-if test -f "${INPUT}tsconfig.json"; then
+if test -f "${OUTPUT}tsconfig.json"; then
   echo "Found tsconfig.json; disabling test compilation"
-  sed -i 's/, "\.meta\/\*"//' "${INPUT}tsconfig.json"
-  sed -i 's/"node_modules"/"node_modules", "*.test.ts", ".meta\/*"/' "${INPUT}tsconfig.json"
+  sed -i 's/, "\.meta\/\*"//' "${OUTPUT}tsconfig.json"
+  sed -i 's/"node_modules"/"node_modules", "*.test.ts", ".meta\/*"/' "${OUTPUT}tsconfig.json"
 fi;
 
 echo "Running tsc"
-tsc_result="$( cd "${INPUT}" && "yarn tsc" --noEmit 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && "yarn tsc" --noEmit 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
 sed -i 's/"/\\"/g' $result_file
 
-if test -f "${INPUT}tsconfig.json"; then
+if test -f "${OUTPUT}tsconfig.json"; then
   echo "Found tsconfig.json; enabling test compilation"
-  sed -i 's/\["\*"\]/["*", ".meta\/*"]/' "${INPUT}tsconfig.json"
-  sed -i 's/"node_modules", "\*\.test\.ts", "\.meta\/\*"/"node_modules"/' "${INPUT}tsconfig.json"
+  sed -i 's/\["\*"\]/["*", ".meta\/*"]/' "${OUTPUT}tsconfig.json"
+  sed -i 's/"node_modules", "\*\.test\.ts", "\.meta\/\*"/"node_modules"/' "${OUTPUT}tsconfig.json"
 fi;
 
 if [ $test_exit -eq 2 ]
@@ -178,8 +199,17 @@ then
   echo "tsc compilation failed"
 
   # Restore babel.config.js and package.json
-  mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
-  mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
+  if test -f "${OUTPUT}package.config.json"; then
+    unlink "${OUTPUT}package.config.json"
+  fi;
+
+  if test -f "${OUTPUT}babel.config.js.__exercism.bak"; then
+    mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
+  fi;
+
+  if test -f "${OUTPUT}package.json.__exercism.bak"; then
+    mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
+  fi;
 
   # Compose the message to show to the student
   #
@@ -197,26 +227,35 @@ else
 fi
 
 # Run tests
-yarn jest "${OUTPUT}*" \
-          --bail 1 \
-          --ci \
-          --colors \
-          --config ${CONFIG} \
-          --noStackTrace \
-          --outputFile="${result_file}" \
-          --passWithNoTests \
-          --reporters "${REPORTER}" \
-          --roots "${OUTPUT}" \
-          --setupFilesAfterEnv ${SETUP} \
-          --verbose false \
-          --testLocationInResults
+cd "${OUTPUT}" && yarn run jest "${OUTPUT}*" \
+                  --bail 1 \
+                  --ci \
+                  --colors \
+                  --config ${CONFIG} \
+                  --noStackTrace \
+                  --outputFile="${result_file}" \
+                  --passWithNoTests \
+                  --reporters "${REPORTER}" \
+                  --roots "${OUTPUT}" \
+                  --setupFilesAfterEnv ${SETUP} \
+                  --verbose false \
+                  --testLocationInResults
 
 # Convert exit(1) (jest worked, but there are failing tests) to exit(0)
 test_exit=$?
 
 # Restore babel.config.js and package.json
-mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
-mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
+if test -f "${OUTPUT}package.config.json"; then
+  unlink "${OUTPUT}package.config.json"
+fi;
+
+if test -f "${OUTPUT}babel.config.js.__exercism.bak"; then
+  mv "${OUTPUT}babel.config.js.__exercism.bak" "${OUTPUT}babel.config.js" || true
+fi;
+
+if test -f "${OUTPUT}package.json.__exercism.bak"; then
+  mv "${OUTPUT}package.json.__exercism.bak" "${OUTPUT}package.json" || true
+fi;
 
 echo ""
 echo "Find the output at:"
