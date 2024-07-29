@@ -4,7 +4,7 @@ import { join, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { run, root } from './paths.mjs'
 
-const SILENT = true
+const SILENT = process.env.SILENT !== '0' && process.env.RUNNER_DEBUG !== '1'
 
 export function assertPass(slug, fixture, outputDir = null) {
   outputDir = outputDir || mkdtempSync(join(tmpdir(), 'foo-'))
@@ -85,7 +85,7 @@ export function rejectPass(slug, fixture, outputDir = null) {
   // shelljs.echo(`-> ${command}`)
   const { stderr, code } = shelljs.exec(command, {
     async: false,
-    silent: true,
+    silent: SILENT,
     cwd: root,
   })
 
@@ -148,7 +148,7 @@ export function assertError(slug, fixture, outputDir = null) {
   // shelljs.echo(`-> ${command}`)
   const { stderr, code } = shelljs.exec(command, {
     async: false,
-    silent: true,
+    silent: SILENT,
     cwd: root,
   })
 
