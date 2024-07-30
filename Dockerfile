@@ -48,7 +48,6 @@ RUN set -ex; \
   # TODO: yarn workspaces focus --production;
 
 # Disable network for corepack
-ENV COREPACK_DEFAULT_TO_LATEST=0
 ENV COREPACK_ENABLE_NETWORK=0
 ENV COREPACK_ENABLE_STRICT=0
 
