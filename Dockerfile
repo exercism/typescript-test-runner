@@ -33,8 +33,8 @@ RUN corepack install
 RUN corepack yarn --version
 # https://github.com/nodejs/corepack/issues/414#issuecomment-2096218732
 # https://github.com/nodejs/corepack/blob/bc13d40037d0b1bfd386e260ae741f55505b5c7c/sources/folderUtils.ts#L26-L31
-RUN chmod 444 /tmp/corepack/v1/lastKnownGood.json
-RUN chmod 555 /tmp/corepack/v1
+RUN chmod 444 /tmp/corepack/lastKnownGood.json
+RUN chmod 555 /tmp/corepack
 
 # Build the test runner
 RUN set -ex; \
