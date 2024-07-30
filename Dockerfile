@@ -20,17 +20,18 @@ COPY . .
 
 # Install yarn so it will be available read-only
 # https://github.com/nodejs/corepack/issues/183#issue-1379672431
-ENV COREPACK_HOME /tmp/corepack
+USER appuser
+
+ENV COREPACK_HOME=/tmp/corepack
 
 RUN set -ex; \
-  # install corepack globally with the last known good version of yarn
   corepack enable yarn; \
   corepack pack -o ./corepack.tgz; \
   COREPACK_ENABLE_NETWORK=0 corepack install -g ./corepack.tgz;
 
 # https://github.com/nodejs/corepack/pull/446#issue-2218976611
 RUN corepack yarn --version
-
+RUN COREPACK_ENABLE_NETWORK=0 yarn --version
 
 # Build the test runner
 RUN set -ex; \
@@ -54,5 +55,4 @@ ENV COREPACK_ENABLE_STRICT=0
 ENV YARN_ENABLE_OFFLINE_MODE=1
 ENV YARN_ENABLE_HARDENED_MODE=0
 
-USER appuser
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
