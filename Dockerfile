@@ -20,8 +20,6 @@ COPY . .
 
 # Install yarn so it will be available read-only
 # https://github.com/nodejs/corepack/issues/183#issue-1379672431
-USER appuser
-
 ENV COREPACK_HOME=/tmp/corepack
 
 RUN set -ex; \
