@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-yarn build || exit
-yarn test:bare
-
+corepack enable yarn
+corepack yarn build || exit
+corepack yarn test:bare

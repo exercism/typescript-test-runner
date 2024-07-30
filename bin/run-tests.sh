@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Synopsis:
-# Test the test runner by running it against a predefined set of solutions 
+# Test the test runner by running it against a predefined set of solutions
 # with an expected output.
 
 # Output:
@@ -14,7 +14,7 @@
 exit_code=0
 
 # We need to copy the fixtures to a temp directory as the user
-# running within the Docker container does not have permissions 
+# running within the Docker container does not have permissions
 # to run the sed command on the fixtures directory
 fixtures_dir="test/fixtures"
 tmp_fixtures_dir="/tmp/test/fixtures"
@@ -40,7 +40,12 @@ for test_file in $(find "${tmp_fixtures_dir}" -name '*.test.ts'); do
     diff "${results_file_path}" "${expected_results_file_path}"
 
     if [ $? -ne 0 ]; then
+        echo "======================================================="
+        cat "${results_file_path}"
+        echo "======================================================="
         exit_code=1
+    else
+        echo "✅ results match"
     fi
 done
 

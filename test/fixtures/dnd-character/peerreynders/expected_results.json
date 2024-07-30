@@ -1,0 +1,139 @@
+{
+  "status": "pass",
+  "tests": [
+    {
+      "name": "Ability modifier > Ability modifier for score 3 is -4",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(3)).toEqual(-4)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 4 is -3",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(4)).toEqual(-3)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 5 is -3",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(5)).toEqual(-3)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 6 is -2",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(6)).toEqual(-2)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 7 is -2",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(7)).toEqual(-2)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 8 is -1",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(8)).toEqual(-1)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 9 is -1",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(9)).toEqual(-1)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 10 is 0",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(10)).toEqual(0)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 11 is 0",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(11)).toEqual(0)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 12 is 1",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(12)).toEqual(1)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 13 is 1",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(13)).toEqual(1)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 14 is 2",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(14)).toEqual(2)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 15 is 2",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(15)).toEqual(2)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 16 is 3",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(16)).toEqual(3)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 17 is 3",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(17)).toEqual(3)"
+    },
+    {
+      "name": "Ability modifier > Ability modifier for score 18 is 4",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "expect(DnDCharacter.getModifierFor(18)).toEqual(4)"
+    },
+    {
+      "name": "Ability generator > Random ability is within range",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const abilityScore = DnDCharacter.generateAbilityScore()\nexpect(abilityScore).toBeGreaterThanOrEqual(3)\nexpect(abilityScore).toBeLessThanOrEqual(18)"
+    },
+    {
+      "name": "Character creation > Random character is valid",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const character = new DnDCharacter()\nexpect(character.hitpoints).toEqual(\n      10 + DnDCharacter.getModifierFor(character.constitution)\n    )\nexpect(character.strength).toBeGreaterThanOrEqual(3)\nexpect(character.strength).toBeLessThanOrEqual(18)\nexpect(character.dexterity).toBeGreaterThanOrEqual(3)\nexpect(character.dexterity).toBeLessThanOrEqual(18)\nexpect(character.constitution).toBeGreaterThanOrEqual(3)\nexpect(character.constitution).toBeLessThanOrEqual(18)\nexpect(character.intelligence).toBeGreaterThanOrEqual(3)\nexpect(character.intelligence).toBeLessThanOrEqual(18)\nexpect(character.wisdom).toBeGreaterThanOrEqual(3)\nexpect(character.wisdom).toBeLessThanOrEqual(18)\nexpect(character.charisma).toBeGreaterThanOrEqual(3)\nexpect(character.charisma).toBeLessThanOrEqual(18)"
+    },
+    {
+      "name": "Character creation > Each ability is only calculated once",
+      "status": "pass",
+      "message": "",
+      "output": null,
+      "test_code": "const character = new DnDCharacter()\nexpect(character.strength === character.strength).toBeTruthy()"
+    }
+  ],
+  "version": 3
+}

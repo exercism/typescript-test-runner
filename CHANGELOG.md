@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.0.0
+
+- Use Yarn 4
+- Use ESLint 9 (Flat Config)
+- Enable PnP for both this workspace as well as the runner
+- Update chalk to higher version (ESM only)
+
 ## 4.0.0
 
 - Add missing features from javascript-test-runner

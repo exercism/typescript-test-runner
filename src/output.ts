@@ -21,21 +21,15 @@ interface OutputTestInterface {
   status: 'fail' | 'pass' | 'error'
   message: string
   output: string | null
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   test_code: string
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   task_id?: number
 }
 
 type ExerciseConfig = {
   custom?: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     'version.tests.compatibility'?: 'jest-27' | 'jest-29'
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.task-per-describe': boolean
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.may-run-long': boolean
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     'flag.tests.includes-optional': boolean
   }
 }
@@ -140,13 +134,11 @@ export class Output {
     const tests = this.results.tests.map((test) => {
       const parsedSource = parsedSources[test.test_code]
       if (!parsedSource) {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         return { ...test, test_code: null }
       }
 
       const testCase = parsedSource.tests[test.name]
       if (!testCase) {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         return { ...test, test_code: null }
       }
 
@@ -154,16 +146,13 @@ export class Output {
       if (this.configFlag('flag.tests.task-per-describe')) {
         return {
           ...test,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           task_id: testCase.topLevelIndex,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           test_code: testCase.testCode(parsedSource.source),
         }
       }
 
       return {
         ...test,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         test_code: testCase.testCode(parsedSource.source),
       }
     })
@@ -262,7 +251,6 @@ export class Output {
             ? [consoleOutputs[''], outputMessage].filter(Boolean).join('\n') ||
               null
             : outputMessage,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           test_code: specFilePath,
         }
       })

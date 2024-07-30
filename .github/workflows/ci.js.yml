@@ -14,12 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
       - name: Use Node.js LTS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b
         with:
           node-version-file: .nvmrc
 
       - name: Install project dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          corepack enable yarn
+          corepack yarn -v
+          corepack yarn install --immutable
 
       - name: Run exercism/typescript-test-runner ci precheck (lint code)
         run: bin/lint.sh
@@ -34,12 +37,15 @@ jobs:
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install project dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          corepack enable yarn
+          corepack yarn -v
+          corepack yarn install --immutable
 
       - name: Build the test-runner (using Node ${{ matrix.node-version }})
         run: bin/test.sh
