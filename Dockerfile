@@ -37,8 +37,6 @@ RUN corepack yarn --version
 RUN chmod 444 /idk/corepack/lastKnownGood.json
 RUN chmod 555 /idk/corepack
 
-RUN chmod 555 yarn.lock
-
 # Build the test runner
 RUN set -ex; \
   # install all the development modules (used for building)
@@ -59,9 +57,6 @@ ENV COREPACK_ENABLE_STRICT=0
 # Prefer offline mode for yarn
 ENV YARN_ENABLE_OFFLINE_MODE=1
 ENV YARN_ENABLE_HARDENED_MODE=0
-
-# Because I cry myself to sleep
-ENV DEBUG=*
 
 # Let's check to be certain
 RUN yarn --version
