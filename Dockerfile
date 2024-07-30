@@ -30,6 +30,7 @@ RUN set -ex; \
 # https://github.com/nodejs/corepack/pull/446#issue-2218976611
 RUN corepack yarn --version
 RUN COREPACK_ENABLE_NETWORK=0 yarn --version
+# https://github.com/nodejs/corepack/issues/414#issuecomment-2096218732
 RUN chmod 444 /tmp/corepack/lastKnownGood.json
 RUN chmod 555 /tmp/corepack
 
