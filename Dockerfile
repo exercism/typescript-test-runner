@@ -37,6 +37,8 @@ RUN corepack yarn --version
 RUN chmod 444 /idk/corepack/lastKnownGood.json
 RUN chmod 555 /idk/corepack
 
+RUN chmod 555 yarn.lock
+
 # Build the test runner
 RUN set -ex; \
   # install all the development modules (used for building)
