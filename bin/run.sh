@@ -179,6 +179,10 @@ else
 
 fi;
 
+# In case it's not yet enabled
+corepack enable yarn;
+corepack install;
+
 echo "Yarn version now: "
 YARN_ENABLE_OFFLINE_MODE=1 yarn -v
 which yarn
