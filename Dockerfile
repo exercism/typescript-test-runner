@@ -56,4 +56,7 @@ ENV COREPACK_ENABLE_STRICT=0
 ENV YARN_ENABLE_OFFLINE_MODE=1
 ENV YARN_ENABLE_HARDENED_MODE=0
 
+# Because I cry myself to sleep
+ENV DEBUG=*
+
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
