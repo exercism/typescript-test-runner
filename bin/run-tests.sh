@@ -42,7 +42,10 @@ for test_file in $(find "${tmp_fixtures_dir}" -name '*.test.ts'); do
     if [ $? -ne 0 ]; then
         echo "======================================================="
         cat "${results_file_path}"
+        echo "======================================================="
         exit_code=1
+    else
+        echo "✅ results match"
     fi
 done
 
