@@ -89,7 +89,7 @@ if test -f "$REPORTER"; then
 
   echo ""
 else
-  >&2 echo "Expected reporter.js to exist. Did you forget to yarn build first?"
+  >&2 echo "Expected reporter.js to exist. Did you forget to 'corepack yarn build' first?"
   >&2 echo "Using reporter : $REPORTER"
   >&2 echo "Using test-root: $INPUT"
   >&2 echo "Using base-root: $ROOT"
@@ -183,14 +183,13 @@ fi;
 corepack enable yarn;
 
 echo "Yarn version now: "
-YARN_ENABLE_OFFLINE_MODE=1 yarn -v
-which yarn
+YARN_ENABLE_OFFLINE_MODE=1 corepack yarn --version
 echo ""
 echo "---------------------------------------------------------------"
 
 if test -f "${OUTPUT}package.json"; then
   echo "Standalone package found" #, installing packages from cache"
-  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false yarn install --immutable
+  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false corepack yarn install --immutable
   echo "---------------------------------------------------------------"
 fi;
 
@@ -207,7 +206,7 @@ if test -f "${OUTPUT}tsconfig.json"; then
 fi;
 
 echo "Running tsc"
-tsc_result="$( cd "${OUTPUT}" && "YARN_ENABLE_OFFLINE_MODE=1 yarn run tsc" --noEmit 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run tsc --noEmit 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -246,6 +245,12 @@ then
   tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
   echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
   sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
+
+  echo ""
+  echo "---------------------------------------------------------------"
+  echo "Find the output at:"
+  echo $result_file
+
   # Test runner didn't fail!
   exit 0
 else
@@ -257,7 +262,7 @@ echo "---------------------------------------------------------------"
 echo "Running tests via jest"
 
 # Run tests
-cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 yarn run jest "${OUTPUT}*" \
+cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run jest "${OUTPUT}*" \
                   --bail 1 \
                   --ci \
                   --colors \

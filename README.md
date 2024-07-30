@@ -12,13 +12,14 @@ The Docker image for automatically run tests on TypeScript solutions submitted t
 Clone this repository and then run:
 
 ```bash
-yarn install
+corepack enable yarn
+corepack yarn install
 ```
 
 You'll need at least Node LTS for this to work.
 
 ```
-yarn build
+corepack yarn build
 ```
 
 ## Usage
@@ -103,7 +104,7 @@ The `package.json` needs to be in-sync with the [`typescript` exercise `package.
 Ensure SDKs are installed if using vscode to interopt with Yarn PnP:
 
 ```shell
-yarn dlx @yarnpkg/sdks vscode
+corepack yarn dlx @yarnpkg/sdks vscode
 
 ➤ YN0000: ┌ Generating SDKs inside .yarn/sdks
 ➤ YN0000: │ ✓ Eslint
