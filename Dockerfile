@@ -21,7 +21,8 @@ COPY . .
 # Install yarn so it will be available read-only
 # https://github.com/nodejs/corepack/issues/183#issue-1379672431
 # https://github.com/nodejs/corepack/blob/bc13d40037d0b1bfd386e260ae741f55505b5c7c/tests/main.test.ts#L483
-ENV COREPACK_HOME=/tmp/corepack
+RUN mkdir -p /idk/corepack
+ENV COREPACK_HOME=/idk/corepack
 
 RUN set -ex; \
   corepack enable yarn;
@@ -33,8 +34,8 @@ RUN corepack install
 RUN corepack yarn --version
 # https://github.com/nodejs/corepack/issues/414#issuecomment-2096218732
 # https://github.com/nodejs/corepack/blob/bc13d40037d0b1bfd386e260ae741f55505b5c7c/sources/folderUtils.ts#L26-L31
-RUN chmod 444 /tmp/corepack/lastKnownGood.json
-RUN chmod 555 /tmp/corepack
+RUN chmod 444 /idk/corepack/lastKnownGood.json
+RUN chmod 555 /idk/corepack
 
 # Build the test runner
 RUN set -ex; \
