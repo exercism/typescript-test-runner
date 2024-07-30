@@ -117,7 +117,7 @@ else
   cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
   cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
   cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
-  cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.loader.mjs"
+  cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
 
   # Rename babel.config.js and package.json
   if test -f "${OUTPUT}babel.config.js"; then
@@ -145,6 +145,10 @@ else
   echo "Test runnner root does not contain output directory. Turning output directory into a standalone package."
 
   # Turn into standalone package
+  cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
+  cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
+  cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
+  cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
   cp "${ROOT}/package.json" "${OUTPUT}package.json"
 fi
 
