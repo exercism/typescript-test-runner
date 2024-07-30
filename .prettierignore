@@ -5,6 +5,7 @@
 
 /.yarn
 /.yarnrc.yml
+/.vscode
 
 # These are org-wide files (https://github.com/exercism/org-wide-files/)
 /.github/labels.yml
