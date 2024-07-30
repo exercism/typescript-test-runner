@@ -21,8 +21,8 @@ jobs:
       - name: Install project dependencies
         run: |
           corepack enable yarn
-          yarn -v
-          yarn install --immutable
+          corepack yarn -v
+          corepack yarn install --immutable
 
       - name: Run exercism/typescript-test-runner ci precheck (lint code)
         run: bin/lint.sh
@@ -44,8 +44,8 @@ jobs:
       - name: Install project dependencies
         run: |
           corepack enable yarn
-          yarn -v
-          yarn install --immutable
+          corepack yarn -v
+          corepack yarn install --immutable
 
       - name: Build the test-runner (using Node ${{ matrix.node-version }})
         run: bin/test.sh

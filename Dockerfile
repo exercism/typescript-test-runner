@@ -40,15 +40,15 @@ RUN chmod 555 /idk/corepack
 # Build the test runner
 RUN set -ex; \
   # install all the development modules (used for building)
-  yarn cache clean; \
-  yarn install; \
-  yarn build;
-  # yarn cache clean; \
+  corepack yarn cache clean; \
+  corepack yarn install; \
+  corepack yarn build;
+  # corepack yarn cache clean; \
   #
   # install only the node_modules we need for production
   # I don't know how to get this to work with zero-installs enabled
   #
-  # TODO: yarn workspaces focus --production;
+  # TODO: corepack yarn workspaces focus --production;
 
 # Disable network for corepack
 ENV COREPACK_ENABLE_NETWORK=0
@@ -59,6 +59,6 @@ ENV YARN_ENABLE_OFFLINE_MODE=1
 ENV YARN_ENABLE_HARDENED_MODE=0
 
 # Let's check to be certain
-RUN yarn --version
+RUN corepack yarn --version
 
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]

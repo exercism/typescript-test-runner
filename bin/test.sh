@@ -3,5 +3,5 @@
 set -euo pipefail
 
 corepack enable yarn
-yarn build || exit
-yarn test:bare
+corepack yarn build || exit
+corepack yarn test:bare
