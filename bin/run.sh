@@ -163,6 +163,10 @@ if [[ "${OUTPUT}" =~ "$ROOT" ]]; then
   echo "the tests, which is what we want. No need to turn the output "
   echo "directory into a standalone package."
   echo ""
+
+  echo "✔️  tsconfig.json from root to output"
+  cp "${ROOT}/tsconfig.solutions.json" "${OUTPUT}tsconfig.json"
+  echo ""
 else
   echo ""
   echo "The output directory is likely not placed inside the test    "
@@ -194,7 +198,7 @@ else
   cp "${ROOT}/package.json" "${OUTPUT}package.json"
 
   echo "✔️  tsconfig.json from root to output"
-  cp "${ROOT}/tsconfig.json" "${OUTPUT}tsconfig.json"
+  cp "${ROOT}/tsconfig.solutions.json" "${OUTPUT}tsconfig.json"
   echo ""
 fi
 
@@ -313,13 +317,13 @@ set +e
 # cp -r "$ROOT/node_modules/@types" "$INPUT/node_modules"
 
 if test -f "${OUTPUT}tsconfig.json"; then
-  echo "✔️  found a tsconfig.json (as expected). Re-configuring."
+  echo "✔️  found a tsconfig.json (as expected)" #. Re-configuring."
 
   # replace "include": ["src"],
-  sed -i 's/"include": \["src"\],/"\/\/ include": ["src"],/' "${OUTPUT}tsconfig.json"
+  # sed -i 's/"include": \["src"\],/"\/\/ include": ["src"],/' "${OUTPUT}tsconfig.json"
 
   # replace "exclude": ["test", "node_modules"]
-  sed -i 's/"exclude": \["test", "node_modules"\]/"exclude": ["test", "node_modules", ".meta\/*", "__typetests__\/*", "*.test.ts", "*.tst.ts"]/' "${OUTPUT}tsconfig.json"
+  # sed -i 's/"exclude": \["test", "node_modules"\]/"exclude": ["test", "node_modules", ".meta\/*", "__typetests__\/*", "*.test.ts", "*.tst.ts"]/' "${OUTPUT}tsconfig.json"
 
   echo "👁️  ${OUTPUT}tsconfig.json"
   cat "${OUTPUT}tsconfig.json"
@@ -333,15 +337,15 @@ test_exit=$?
 
 echo "$tsc_result" > $result_file
 
-if test -f "${OUTPUT}tsconfig.json"; then
-  echo "✔️  found a tsconfig.json (as expected). Restoring."
+# if test -f "${OUTPUT}tsconfig.json"; then
+  # echo "✔️  found a tsconfig.json (as expected). Restoring."
 
-   # replace "include": ["src"],
-  sed -i 's/"\/\/ include": \["src"\],/"include": ["src"],/' "${OUTPUT}tsconfig.json"
+  # replace "include": ["src"],
+  # sed -i 's/"\/\/ include": \["src"\],/"include": ["src"],/' "${OUTPUT}tsconfig.json"
 
   # replace "exclude": ["test", "node_modules"]
-  sed -i 's/"exclude": \["test", "node_modules", ".meta\/*", "__typetests__\/*", "*.test.ts", "*.tst.ts"\]/"exclude": ["test", "node_modules"]/' "${OUTPUT}tsconfig.json"
-fi;
+  # sed -i 's/"exclude": \["test", "node_modules", ".meta\/*", "__typetests__\/*", "*.test.ts", "*.tst.ts"\]/"exclude": ["test", "node_modules"]/' "${OUTPUT}tsconfig.json"
+# fi;
 
 if [ $test_exit -eq 2 ]; then
   echo ""
