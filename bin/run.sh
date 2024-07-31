@@ -45,7 +45,7 @@ else
   # - private: https://exercism.io/solutions/c3b826d95cb54441a8f354d7663e9e16
   #
   uuid=$(basename $1)
-  echo "Exercism remote UUID: $uuid"
+  echo "🔗  Exercism remote UUID: $uuid"
 
   result=$(exercism download --uuid="${uuid}" | sed -n 1p) || exit $?
   echo $result
@@ -302,7 +302,7 @@ fi;
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
-echo "║ ➤  Step 1/3: Build (tests: does it compile?)                ║"
+echo "  ➤  Step 1/3: Build (tests: does it compile?)                "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -397,7 +397,7 @@ fi
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
-echo "║ ➤  Step 2/3: Type tests (tests: are the types as expected?) ║"
+echo "  ➤  Step 2/3: Type tests (tests: are the types as expected?) "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -424,7 +424,7 @@ fi;
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
-echo "║ ➤  Step 3/3: Execution (tests: does the solution work?)     ║"
+echo "  ➤  Step 3/3: Execution (tests: does the solution work?)     "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
