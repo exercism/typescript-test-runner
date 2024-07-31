@@ -1,0 +1,14 @@
+{
+  "authors": [
+    "SleeplessByte"
+  ],
+  "files": {
+    "solution": [
+    ],
+    "test": [
+      "__typetests__/docs.tst.ts"
+    ],
+    "example": [
+    ]
+  }
+}

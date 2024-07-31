@@ -1,0 +1,15 @@
+{
+  "authors": [
+    "SleeplessByte"
+  ],
+  "files": {
+    "solution": [
+      "fire.ts"
+    ],
+    "test": [
+      "__typetests__/fire.tst.ts"
+    ],
+    "example": [
+    ]
+  }
+}
