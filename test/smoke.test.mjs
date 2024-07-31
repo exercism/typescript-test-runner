@@ -12,9 +12,9 @@ assertPass(
 )
 
 shelljs.echo(
-  'typescript-test-runner > passing solution > with output directory'
+  'typescript-test-runner > failing solution > with output directory'
 )
-assertPass('clock', join(fixtures, 'clock', 'pass'))
+assertError('clock', join(fixtures, 'clock', 'fail'))
 
 /** Test failures */
 const failures = ['tests', 'empty']

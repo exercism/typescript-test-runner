@@ -227,14 +227,38 @@ else
   else
     test_file="${SLUG}.test.ts"
 
-    echo "⚠️ No configuration file found. The test-runner will now   "
+    echo "⚠️  No configuration file found. The test-runner will now   "
     echo "   guess which test file(s) to prep based on the input."
-    echo "👁️ ${test_file}"
+    echo ""
+    echo "👁️  ${OUTPUT}${test_file}"
     echo ""
 
-    if test -f $test_file; then
+    if test -f "${OUTPUT}${test_file}"; then
       "$ROOT/bin/prepare.sh" ${OUTPUT} ${test_file}
     else
+      echo ""
+      echo "If the solution previously contained configuration files,    "
+      echo "they were disabled and now need to be restored."
+      echo ""
+
+      # Restore configuration files
+      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
+        echo "✔️  restoring babel.config.js in output"
+        unlink "${OUTPUT}babel.config.js"
+        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
+      fi;
+
+      if test -f "${OUTPUT}package.json.💥.bak"; then
+        echo "✔️  restoring package.json in output"
+        unlink "${OUTPUT}package.json"
+        mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
+      fi;
+
+      if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
+        echo "✔️  restoring tsconfig.json in output"
+        mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
+      fi;
+
       result="The submitted code cannot be ran by the test-runner. There is no configuration file inside the .meta (or .exercism) directory, and the fallback test file '${test_file}' does not exist. Please fix these issues and resubmit."
       echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$result\" }" > $result_file
       sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
@@ -404,7 +428,7 @@ echo "║ ➤  Step 3/3: Execution (tests: does the solution work?)     ║"
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-jest_tests=$(corepack yarn jest --listTests --passWithNoTests) || false
+jest_tests=$(cd "${OUTPUT}" && corepack yarn jest --listTests --passWithNoTests) || false
 
 if [ -z "${jest_tests}" ]; then
   echo "✔️  no jest tests (*.test.ts) discovered."
@@ -441,7 +465,6 @@ if [ -z "${jest_tests}" ]; then
 
   if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
     echo "✔️  restoring tsconfig.json in output"
-    unlink "${OUTPUT}tsconfig.json"
     mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
   fi;
 
@@ -505,7 +528,6 @@ fi;
 
 if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
   echo "✔️  restoring tsconfig.json in output"
-  unlink "${OUTPUT}tsconfig.json"
   mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
 fi;
 
