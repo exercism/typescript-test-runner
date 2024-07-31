@@ -472,6 +472,8 @@ if test -d "${OUTPUT}__typetests__/"; then
   fi;
 else
   # TODO: check the config file to see if tstyche tests were expected or not
+  #       flag.tests.tstyche
+
   echo "✅ no type tests (*.tst.ts) discovered."
 fi;
 
@@ -485,8 +487,10 @@ jest_tests=$(cd "${OUTPUT}" && corepack yarn jest --listTests --passWithNoTests)
 
 if [ -z "${jest_tests}" ]; then
   echo "✔️  no jest tests (*.test.ts) discovered."
+  # TODO: check the config file to see if jest tests were expected or not
+  #       flag.tests.jest
+
   if [ "$has_type_test" = true ]; then
-    # TODO: check the config file to see if jest tests were expected or not
     echo ""
     echo "✅  did run type tests, so this is fine."
 
