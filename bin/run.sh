@@ -332,7 +332,6 @@ tsc_result="$( cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run ts
 test_exit=$?
 
 echo "$tsc_result" > $result_file
-sed -i 's/"/\\"/g' $result_file
 
 if test -f "${OUTPUT}tsconfig.json"; then
   echo "✔️  found a tsconfig.json (as expected). Restoring."
@@ -376,7 +375,7 @@ if [ $test_exit -eq 2 ]; then
   # TODO: interpret the tsc_result lines and pull out the source.
   #       We actually already have code to do this, given the cursor position
   #
-  tsc_result=$(cat $result_file)
+  tsc_result=$(cat $result_file | jq -Rsa . | sed -e 's/^"//' -e 's/"$//')
   tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
   echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
   sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
@@ -403,20 +402,68 @@ echo ""
 
 has_type_test=false
 
-if ls -U "${OUTPUT}/**/*.tst.ts" 1> /dev/null 2>&1; then
-  has_type_test=true
-  echo "✔️  type tests discovered."
-  corepack yarn tstyche --listFiles
+if test -d "${OUTPUT}__typetests__/"; then
+  type_tests=$(ls -aln1 "${OUTPUT}__typetests__/" | grep "tst.ts$")
 
-  echo ""
-  echo "⚙️ corepack yarn tstyche"
-  echo ""
-  cd "${OUTPUT}" && corepack yarn tstyche 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
+  if [ -z "${type_tests}" ]; then
+    # TODO: check the config file to see if tstyche tests were expected or not
+    echo "✅ no type tests (*.tst.ts) discovered."
+  else
+    has_type_test=true
+    echo "✔️  type tests discovered."
+    cd "${OUTPUT}" && corepack yarn tstyche --listFiles
 
-  cat "${OUTPUT}tstyche.stdout.txt"
-  cat "${OUTPUT}tstyche.stderr.txt"
+    echo ""
+    echo "⚙️  corepack yarn tstyche"
+    echo ""
+    cd "${OUTPUT}" && corepack yarn tstyche --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
 
-  # TODO: use results from tstyche
+    tstyche_error_output=$(cat "${OUTPUT}tstyche.stderr.txt")
+
+    if [ -z "${tstyche_error_output}" ]; then
+      echo "✅ all tests (*.tst.ts) passed."
+    else
+      tstyche_result=$(echo $tstyche_error_output | jq -Rsa . | sed -e 's/^"//' -e 's/"$//')
+      tstyche_result="The submitted code did compile but at least one of the type-tests failed. We have collected the failing test encountered. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n${tstyche_result}"
+      echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tstyche_result\" }" > $result_file
+      sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
+
+      echo "❌ not all tests (*.tst.ts) passed."
+
+      echo ""
+      echo "If the solution previously contained configuration files,    "
+      echo "they were disabled and now need to be restored."
+      echo ""
+
+      # Restore configuration files
+      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
+        echo "✔️  restoring babel.config.js in output"
+        unlink "${OUTPUT}babel.config.js"
+        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
+      fi;
+
+      if test -f "${OUTPUT}package.json.💥.bak"; then
+        echo "✔️  restoring package.json in output"
+        unlink "${OUTPUT}package.json"
+        mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
+      fi;
+
+      if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
+        echo "✔️  restoring tsconfig.json in output"
+        mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
+      fi;
+
+      echo ""
+      echo "---------------------------------------------------------------"
+      echo "The results of this run have been written to 'results.json'."
+      echo "👁️  ${result_file}"
+
+      # Test runner didn't fail!
+      exit 0
+    fi;
+
+    # TODO: use results from tstyche
+  fi;
 else
   # TODO: check the config file to see if tstyche tests were expected or not
   echo "✅ no type tests (*.tst.ts) discovered."
@@ -434,13 +481,15 @@ if [ -z "${jest_tests}" ]; then
   echo "✔️  no jest tests (*.test.ts) discovered."
   if [ "$has_type_test" = true ]; then
     # TODO: check the config file to see if jest tests were expected or not
-    echo "✔️  did run type tests, so this is fine."
+    echo ""
+    echo "✅  did run type tests, so this is fine."
 
     # TODO: use results from tstyche
     runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
     echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"$runner_result\" }" > $result_file
   else
-    runner_result="The submitted code was not subjected to any type or executation tests. It did compile correctly, but somethign is wrong because at least one test was expected."
+    echo "❌ neither type tests, nor execution tests ran"
+    runner_result="The submitted code was not subjected to any type or execution tests. It did compile correctly, but something is wrong because at least one test was expected."
     echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$runner_result\" }" > $result_file
     sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
   fi

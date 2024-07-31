@@ -24,7 +24,7 @@
     "prepublish": "corepack yarn test:bare && corepack yarn lint",
     "lint": "corepack yarn eslint src -c eslint.config.mjs && corepack yarn eslint test -c eslint.config.mjs",
     "test": "corepack yarn build && corepack yarn test:bare",
-    "test:bare": "corepack yarn node test/smoke.test.mjs && corepack yarn node test/skip.test.mjs && corepack yarn node test/import.test.mjs"
+    "test:bare": "corepack yarn node test/smoke.test.mjs && corepack yarn node test/skip.test.mjs && corepack yarn node test/import.test.mjs && corepack yarn node test/types.test.mjs"
   },
   "dependencies": {
     "@exercism/babel-preset-typescript": "^0.5.0",
