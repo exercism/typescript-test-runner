@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.1.0
+
+- Add support for type-tests
+- Rework `run.sh` for console friendly output
+
 ## 5.0.0
 
 - Use Yarn 4
