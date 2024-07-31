@@ -216,6 +216,7 @@ if test -f $configuration_file; then
   echo "There is a configuration file in the expected .meta location "
   echo "which will now be used to determine which test files to prep."
   echo "👁️  ${configuration_file}"
+  cat "${configuration_file}"
   echo ""
 
   cat $configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
@@ -225,6 +226,7 @@ else
     echo "location which will now be used to determine which test    "
     echo "files to prep."
     echo "👁️  ${local_configuration_file}"
+    cat "${local_configuration_file}"
     echo ""
 
     cat $local_configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
@@ -588,6 +590,7 @@ echo ""
 echo "---------------------------------------------------------------"
 echo "The results of this run have been written to 'results.json'."
 echo "👁️  ${result_file}"
+echo ""
 
 if [ $test_exit -eq 1 ]; then
   exit 0
