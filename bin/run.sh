@@ -303,6 +303,7 @@ if test -f "${OUTPUT}tsconfig.json"; then
 fi;
 
 echo "⚙️  corepack yarn run tsc"
+echo ""
 tsc_result="$( cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run tsc --noEmit 2>&1 )"
 test_exit=$?
 
@@ -385,6 +386,7 @@ if ls -U "${OUTPUT}/**/*.tst.ts" 1> /dev/null 2>&1; then
 
   echo ""
   echo "⚙️ corepack yarn tstyche"
+  echo ""
   cd "${OUTPUT}" && corepack yarn tstyche 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
 
   cat "${OUTPUT}tstyche.stdout.txt"
@@ -458,6 +460,8 @@ echo $jest_tests
 # Run tests
 echo ""
 echo "⚙️  corepack yarn jest <...>"
+echo ""
+
 cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run jest "${OUTPUT}*" \
                   --bail 1 \
                   --ci \
