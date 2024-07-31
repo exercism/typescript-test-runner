@@ -7,7 +7,6 @@ function firstItem<T>(target: Array<T>): T | undefined {
 test("first item requires a parameter", () => {
   expect(firstItem(["a", "b", "c"])).type.toBe<string | undefined>();
 
-  // @ts-expect-error
   expect(firstItem()).type.toRaiseError("Expected 1 argument");
 });
 
