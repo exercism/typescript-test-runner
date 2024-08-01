@@ -166,6 +166,13 @@ if [[ "${OUTPUT}" =~ "$ROOT" ]]; then
 
   echo "✔️  tsconfig.json from root to output"
   cp "${ROOT}/tsconfig.solutions.json" "${OUTPUT}tsconfig.json"
+
+  if test -f "${OUTPUT}yarn.lock"; then
+    echo "✔️  renaming yarn.lock in output to prevent yarn from      "
+    echo "   interpreting this directory as a standalone package."
+    mv "${OUTPUT}yarn.lock" "${OUTPUT}yarn.lock.💥.bak" || true
+  fi;
+
   echo ""
 else
   echo ""
@@ -256,7 +263,9 @@ else
 
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
-        unlink "${OUTPUT}package.json"
+        if test -f "${OUTPUT}package.json"; then
+          unlink "${OUTPUT}package.json"
+        fi
         mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
       fi;
 
@@ -265,8 +274,16 @@ else
         mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
       fi;
 
+      if test -f "${OUTPUT}yarn.lock.💥.bak"; then
+        echo "✔️  restoring yarn.lock in output"
+        if test -f "${OUTPUT}yarn.lock"; then
+          unlink "${OUTPUT}yarn.lock"
+        fi
+        mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
+      fi;
+
       result="The submitted code cannot be ran by the test-runner. There is no configuration file inside the .meta (or .exercism) directory, and the fallback test file '${test_file}' does not exist. Please fix these issues and resubmit."
-      echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$result\" }" > $result_file
+      echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"${result}\" }" > $result_file
       sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
 
       echo "❌ could not run the test suite(s). A valid output exists:"
@@ -366,7 +383,9 @@ if [ $test_exit -eq 2 ]; then
 
   if test -f "${OUTPUT}package.json.💥.bak"; then
     echo "✔️  restoring package.json in output"
-    unlink "${OUTPUT}package.json"
+    if test -f "${OUTPUT}package.json"; then
+      unlink "${OUTPUT}package.json"
+    fi
     mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
   fi;
 
@@ -376,14 +395,22 @@ if [ $test_exit -eq 2 ]; then
     mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
   fi;
 
+  if test -f "${OUTPUT}yarn.lock.💥.bak"; then
+    echo "✔️  restoring yarn.lock in output"
+    if test -f "${OUTPUT}yarn.lock"; then
+      unlink "${OUTPUT}yarn.lock"
+    fi
+    mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
+  fi;
+
   # Compose the message to show to the student
   #
   # TODO: interpret the tsc_result lines and pull out the source.
   #       We actually already have code to do this, given the cursor position
   #
-  tsc_result=$(cat $result_file | jq -Rsa . | sed -e 's/^"//' -e 's/"$//')
-  tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n$tsc_result"
-  echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tsc_result\" }" > $result_file
+  tsc_result="$(cat $result_file | jq -Rsa . | sed -e 's/^"//' -e 's/"$//')"
+  tsc_result="The submitted code didn't compile. We have collected the errors encountered during compilation. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n${tsc_result}"
+  echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"${tsc_result}\" }" > $result_file
   sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
 
   echo "❌ tsc compilation failed with a valid output:"
@@ -424,14 +451,14 @@ if test -d "${OUTPUT}__typetests__/"; then
     echo ""
     cd "${OUTPUT}" && corepack yarn tstyche --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
 
-    tstyche_error_output=$(cat "${OUTPUT}tstyche.stderr.txt")
+    tstyche_error_output="$(cat "${OUTPUT}tstyche.stderr.txt")"
 
     if [ -z "${tstyche_error_output}" ]; then
       echo "✅ all tests (*.tst.ts) passed."
     else
-      tstyche_result=$(echo $tstyche_error_output | jq -Rsa . | sed -e 's/^"//' -e 's/"$//')
+      tstyche_result=$(echo "${tstyche_error_output}" | jq -Rsa . | sed -e 's/^"//' -e 's/"$//' | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g')
       tstyche_result="The submitted code did compile but at least one of the type-tests failed. We have collected the failing test encountered. At this moment the error messages are not very read-friendly, but it's a start. We are working on a more helpful output.\n-------------------------------\n${tstyche_result}"
-      echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$tstyche_result\" }" > $result_file
+      echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"${tstyche_result}\" }" > $result_file
       sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
 
       echo "❌ not all tests (*.tst.ts) passed."
@@ -450,13 +477,23 @@ if test -d "${OUTPUT}__typetests__/"; then
 
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
-        unlink "${OUTPUT}package.json"
+        if test -f "${OUTPUT}package.json"; then
+          unlink "${OUTPUT}package.json"
+        fi
         mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
       fi;
 
       if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
         echo "✔️  restoring tsconfig.json in output"
         mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
+      fi;
+
+      if test -f "${OUTPUT}yarn.lock.💥.bak"; then
+        echo "✔️  restoring yarn.lock in output"
+        if test -f "${OUTPUT}yarn.lock"; then
+          unlink "${OUTPUT}yarn.lock"
+        fi
+        mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
       fi;
 
       echo ""
@@ -496,11 +533,11 @@ if [ -z "${jest_tests}" ]; then
 
     # TODO: use results from tstyche
     runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
-    echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"$runner_result\" }" > $result_file
+    echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"${runner_result}\" }" > $result_file
   else
     echo "❌ neither type tests, nor execution tests ran"
     runner_result="The submitted code was not subjected to any type or execution tests. It did compile correctly, but something is wrong because at least one test was expected."
-    echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"$runner_result\" }" > $result_file
+    echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"${runner_result}\" }" > $result_file
     sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
   fi
 
@@ -518,13 +555,23 @@ if [ -z "${jest_tests}" ]; then
 
   if test -f "${OUTPUT}package.json.💥.bak"; then
     echo "✔️  restoring package.json in output"
-    unlink "${OUTPUT}package.json"
+    if test -f "${OUTPUT}package.json"; then
+      unlink "${OUTPUT}package.json"
+    fi
     mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
   fi;
 
   if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
     echo "✔️  restoring tsconfig.json in output"
     mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
+  fi;
+
+  if test -f "${OUTPUT}yarn.lock.💥.bak"; then
+    echo "✔️  restoring yarn.lock in output"
+    if test -f "${OUTPUT}yarn.lock"; then
+      unlink "${OUTPUT}yarn.lock"
+    fi
+    mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
   fi;
 
   echo ""
@@ -581,13 +628,23 @@ fi;
 
 if test -f "${OUTPUT}package.json.💥.bak"; then
   echo "✔️  restoring package.json in output"
-  unlink "${OUTPUT}package.json"
+  if test -f "${OUTPUT}package.json"; then
+    unlink "${OUTPUT}package.json"
+  fi
   mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
 fi;
 
 if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
   echo "✔️  restoring tsconfig.json in output"
   mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
+fi;
+
+if test -f "${OUTPUT}yarn.lock.💥.bak"; then
+  echo "✔️  restoring yarn.lock in output"
+  if test -f "${OUTPUT}yarn.lock"; then
+    unlink "${OUTPUT}yarn.lock"
+  fi
+  mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
 fi;
 
 echo ""
