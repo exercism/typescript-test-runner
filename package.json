@@ -2,7 +2,7 @@
   "name": "@exercism/typescript-test-runner",
   "description": "Automated Test runner for exercism solutions in TypeScript.",
   "author": "Derk-Jan Karrenbeld <derk-jan+github@karrenbeld.info>",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",

@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.1.1
+
+- Fix newlines in tstyche output
+
 ## 5.1.0
 
 - Add support for type-tests
