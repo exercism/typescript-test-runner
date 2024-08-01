@@ -1,0 +1,22 @@
+[34muses[0m TypeScript 5.5.4
+
+[32mpass[0m [90m./__typetests__/[0mlasagna.tst.ts
+  EXPECTED_MINUTES_IN_OVEN
+    [32m+[0m [90mconstant is defined as a number or a constant number[0m
+  remainingMinutesInOven
+    [32m+[0m [90mtakes one number parameter[0m
+    [32m+[0m [90mreturns a number[0m
+  preparationTimeInMinutes
+    [32m+[0m [90mtakes one number parameter[0m
+    [32m+[0m [90mreturns a number[0m
+  totalTimeInMinutes
+    [32m+[0m [90mtakes two number parameters[0m
+    [32m+[0m [90mreturns a number[0m
+
+Targets:    [32m1 passed[0m, 1 total
+Test files: [32m1 passed[0m, 1 total
+Tests:      [32m7 passed[0m, 7 total
+Assertions: [32m7 passed[0m, 7 total
+Duration:   0.7s
+
+[90mRan [0m[90mall test files.[0m

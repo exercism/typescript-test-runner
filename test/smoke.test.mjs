@@ -16,6 +16,15 @@ shelljs.echo(
 )
 assertError('clock', join(fixtures, 'clock', 'fail'))
 
+shelljs.echo(
+  'typescript-test-runner > passing solution (jest + tstyche) > no output directory'
+)
+assertPass(
+  'lasagna',
+  join(fixtures, 'lasagna', 'pass'),
+  join(fixtures, 'lasagna', 'pass')
+)
+
 /** Test failures */
 const failures = ['tests', 'empty']
 
