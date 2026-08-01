@@ -1,6 +1,5 @@
-FROM node:20-bookworm-slim AS runner
-# Node.js 20 (curently LTS)
-# Debian bookwork
+FROM node:lts-slim@sha256:cb4e8f7c443347358b7875e717c29e27bf9befc8f5a26cf18af3c3dec80e58c5 AS runner
+# lts-slim == 24.18.0-bookworm-slim
 
 # fetch latest security updates
 RUN set -ex; \
