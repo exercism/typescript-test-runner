@@ -11,7 +11,8 @@
 
 # Output:
 # Writes the test results to a results.json file in the passed-in output directory.
-# The test results are formatted according to the specifications at https://github.com/exercism/docs/blob/main/building/tooling/test-runners/interface.md
+# The test results are formatted according to the specifications at
+# https://github.com/exercism/docs/blob/main/building/tooling/test-runners/interface.md
 
 # Example:
 # ./bin/run-in-docker.sh two-fer path/to/solution/folder/ path/to/output/directory/
