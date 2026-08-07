@@ -95,7 +95,7 @@ _This script is provided for testing purposes_
 To run a solution's test in the Docker container, do the following:
 
 1. Open terminal in project's root
-2. Run `./run-in-docker.sh <exercise-slug> <relative-path-to-solution-folder>`
+2. Run `./bin/run-in-docker.sh <exercise-slug> <relative-path-to-solution-folder>`
 
 ## Maintaining
 
