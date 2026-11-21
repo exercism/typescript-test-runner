@@ -64,4 +64,13 @@ ENV YARN_ENABLE_HARDENED_MODE=0
 # Let's check to be certain
 RUN corepack yarn --version
 
+# Node saves the compiled code of each module it loads in this folder, and
+# reuses it in later runs. bin/warm-up.sh runs the test runner once to fill
+# it, so each run skips compiling TypeScript, tstyche and Jest.
+ENV NODE_COMPILE_CACHE=/opt/test-runner/.node-compile-cache
+RUN set -ex; \
+  bin/warm-up.sh; \
+  # remove Jest's cache from the warm-up, so runs start with an empty one
+  rm -rf /tmp/jest_*
+
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
