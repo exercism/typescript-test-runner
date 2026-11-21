@@ -74,3 +74,14 @@ RUN set -ex; \
   rm -rf /tmp/jest_*
 
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
+
+# Record the files read by a run. A separate stage keeps strace out of the
+# final image.
+FROM runner AS prefetch-list
+RUN set -ex; \
+  apt-get update; \
+  apt-get install strace -y; \
+  bin/record-prefetch-list.sh /tmp/prefetch-list
+
+FROM runner
+COPY --from=prefetch-list /tmp/prefetch-list /opt/test-runner/.prefetch-list
