@@ -183,20 +183,32 @@ else
   echo "standalone package."
   echo ""
 
-  echo "✔️  .yarn cache from root to output"
-  cp -r "${ROOT}/.yarn" "${OUTPUT}"
+  if test -d "${ROOT}/node_modules"; then
+    # The Docker image installs the packages into node_modules. Link to that
+    # folder instead of copying the yarn cache and running `yarn install`
+    # in the output directory. The copy and the install took about 2 seconds
+    # with a warm disk cache, and much longer with a cold one. Node resolves
+    # the link to the real folder, so packages load from the image as before.
+    if ! test -e "${OUTPUT}node_modules"; then
+      echo "✔️  node_modules from root to output (link)"
+      ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
+    fi
+  else
+    echo "✔️  .yarn cache from root to output"
+    cp -r "${ROOT}/.yarn" "${OUTPUT}"
 
-  echo "✔️  .yarnrc.yml from root to output"
-  cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
+    echo "✔️  .yarnrc.yml from root to output"
+    cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
 
-  echo "✔️  .yarn.lock from root to output"
-  cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
+    echo "✔️  .yarn.lock from root to output"
+    cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
 
-  echo "✔️  .pnp.cjs from root to output"
-  cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
+    echo "✔️  .pnp.cjs from root to output"
+    cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
 
-  echo "✔️  .pnp.loader.mjs from root to output"
-  cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
+    echo "✔️  .pnp.loader.mjs from root to output"
+    cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
+  fi
 
   echo "✔️  babel.config.js from root to output"
   cp "${ROOT}/babel.config.js" "${OUTPUT}babel.config.js"
@@ -302,26 +314,36 @@ echo "  🔧 Preparing test project                                    "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-if test -d "${OUTPUT}node_modules"; then
-  echo "⚠️  Did not expect node_modules in output directory. This is likely an "
-  echo "   issue with the given solution or it is old. These will be ignored."
+if test -d "${ROOT}/node_modules/.bin"; then
+  # Call the tools directly. Going through `corepack yarn run` started two
+  # extra Node processes (corepack, then yarn) before each tool, about half
+  # a second every time.
+  echo "✔️  using the tools in ${ROOT}/node_modules/.bin"
+  run_tool() { "${ROOT}/node_modules/.bin/$1" "${@:2}"; }
+else
+  if test -d "${OUTPUT}node_modules"; then
+    echo "⚠️  Did not expect node_modules in output directory. This is likely an "
+    echo "   issue with the given solution or it is old. These will be ignored."
+    echo ""
+  fi
+
+  # In case it's not yet enabled
+  echo "✔️  enabling corepack"
+  corepack enable yarn;
+
+  echo "✔️  yarn version now: $(YARN_ENABLE_OFFLINE_MODE=1 corepack yarn --version)"
   echo ""
+
+  if test -f "${OUTPUT}package.json"; then
+    echo "✔️  standalone package found installing packages from cache"
+    echo ""
+    ls -aln1 "$OUTPUT"
+    echo ""
+    cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false corepack yarn install --immutable
+  fi;
+
+  run_tool() { YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run "$@"; }
 fi
-
-# In case it's not yet enabled
-echo "✔️  enabling corepack"
-corepack enable yarn;
-
-echo "✔️  yarn version now: $(YARN_ENABLE_OFFLINE_MODE=1 corepack yarn --version)"
-echo ""
-
-if test -f "${OUTPUT}package.json"; then
-  echo "✔️  standalone package found installing packages from cache"
-  echo ""
-  ls -aln1 "$OUTPUT"
-  echo ""
-  cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false corepack yarn install --immutable
-fi;
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
@@ -349,9 +371,9 @@ if test -f "${OUTPUT}tsconfig.json"; then
   echo ""
 fi;
 
-echo "⚙️  corepack yarn run tsc"
+echo "⚙️  tsc"
 echo ""
-tsc_result="$( cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run tsc --noEmit 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && run_tool tsc --noEmit 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -444,12 +466,12 @@ if test -d "${OUTPUT}__typetests__/"; then
   else
     has_type_test=true
     echo "✔️  type tests discovered."
-    cd "${OUTPUT}" && corepack yarn tstyche --listFiles
+    cd "${OUTPUT}" && run_tool tstyche --listFiles
 
     echo ""
-    echo "⚙️  corepack yarn tstyche"
+    echo "⚙️  tstyche"
     echo ""
-    cd "${OUTPUT}" && corepack yarn tstyche --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
+    cd "${OUTPUT}" && run_tool tstyche --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
 
     tstyche_error_output="$(cat "${OUTPUT}tstyche.stderr.txt")"
 
@@ -520,7 +542,7 @@ echo "  ➤  Step 3/3: Execution (tests: does the solution work?)     "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-jest_tests=$(cd "${OUTPUT}" && corepack yarn jest --listTests --passWithNoTests) || false
+jest_tests=$(cd "${OUTPUT}" && run_tool jest --listTests --passWithNoTests) || false
 
 if [ -z "${jest_tests}" ]; then
   echo "✔️  no jest tests (*.test.ts) discovered."
@@ -588,10 +610,10 @@ echo $jest_tests
 
 # Run tests
 echo ""
-echo "⚙️  corepack yarn jest <...>"
+echo "⚙️  jest <...>"
 echo ""
 
-cd "${OUTPUT}" && YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run jest "${OUTPUT}*" \
+cd "${OUTPUT}" && run_tool jest "${OUTPUT}*" \
                   --bail 1 \
                   --ci \
                   --colors \

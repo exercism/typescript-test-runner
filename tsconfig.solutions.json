@@ -25,7 +25,14 @@
     // files in the TypeScript project.
     //
     // https://babeljs.io/docs/en/babel-plugin-transform-typescript/#caveats
-    "isolatedModules": true
+    "isolatedModules": true,
+
+    // Only load the global types of the runner's direct dependencies. With
+    // Plug'n'Play these were the only @types packages TypeScript could see.
+    // In node_modules, yarn also hoists the @types packages of the tools
+    // (babel, eslint, istanbul and others), which would add about 20 files to
+    // every type check.
+    "types": ["node", "shelljs"]
   },
   "exclude": [".meta/*", "__typetests__/*", "*.test.ts", "*.tst.ts"]
 }
