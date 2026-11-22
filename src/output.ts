@@ -217,10 +217,18 @@ export class Output {
   }
 
   public testFinished(
-    specFilePath: string,
-    testResult: TestResult,
+    compiledSpecFilePath: string,
+    compiledTestResult: TestResult,
     results: AggregatedResult
   ): void {
+    // Jest ran the compiled .js files. Report on the .ts files the student
+    // sees, as when Babel compiled them inside Jest.
+    const specFilePath = this.sourceOf(compiledSpecFilePath)
+    const testResult = {
+      ...compiledTestResult,
+      testFilePath: this.sourceOf(compiledTestResult.testFilePath),
+    }
+
     // Syntax errors etc. These are runtime errors: failures to run
     if (results.numRuntimeErrorTestSuites > 0) {
       this.error(
@@ -235,8 +243,28 @@ export class Output {
 
     // Suites ran fine. Output normally.
     results.testResults.forEach((testResult) => {
-      this.testInnerFinished(specFilePath, testResult, testResult.testResults)
+      this.testInnerFinished(
+        specFilePath,
+        { ...testResult, testFilePath: this.sourceOf(testResult.testFilePath) },
+        testResult.testResults
+      )
     })
+  }
+
+  // bin/run.sh sets COMPILED_DIR to the folder with the compiled files.
+  // This turns a path in that folder into the path of its .ts file.
+  private sourceOf(compiledPath: string): string {
+    const compiledDir = process.env.COMPILED_DIR
+    if (!compiledDir || !compiledPath.startsWith(path.join(compiledDir, '/'))) {
+      return compiledPath
+    }
+
+    return path
+      .join(
+        path.dirname(this.outputFile),
+        path.relative(compiledDir, compiledPath)
+      )
+      .replace(/\.js$/, '.ts')
   }
 
   private getSource(specFilePath: string): {
@@ -440,6 +468,7 @@ function removeStackTrace(message: string): string {
 
 function sanitizeErrorMessage(specFilePath: string, message: string): string {
   const dirs = [
+    ...(process.env.COMPILED_DIR ? [process.env.COMPILED_DIR] : []),
     path.dirname(specFilePath),
     path.dirname(path.dirname(specFilePath)),
     process.cwd(),

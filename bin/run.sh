@@ -328,6 +328,7 @@ if test -d "${ROOT}/node_modules/.bin"; then
   # a second every time.
   echo "✔️  using the tools in ${ROOT}/node_modules/.bin"
   run_tool() { "${ROOT}/node_modules/.bin/$1" "${@:2}"; }
+  run_node() { node "$@"; }
 else
   if test -d "${OUTPUT}node_modules"; then
     echo "⚠️  Did not expect node_modules in output directory. This is likely an "
@@ -351,6 +352,7 @@ else
   fi;
 
   run_tool() { YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run "$@"; }
+  run_node() { YARN_ENABLE_OFFLINE_MODE=1 corepack yarn node "$@"; }
 fi
 
 echo ""
@@ -379,9 +381,17 @@ if test -f "${OUTPUT}tsconfig.json"; then
   echo ""
 fi;
 
+# bin/compile.cjs type-checks the solution as `tsc --noEmit` does, with the
+# same output and exit code. It then writes the JavaScript and source maps
+# into COMPILED_DIR, and Jest runs those files without a transformer. Before,
+# Jest loaded Babel and compiled every file a second time.
+COMPILED_DIR="$(mktemp -d)"
+export COMPILED_DIR
+trap 'rm -rf "${COMPILED_DIR}"' EXIT
+
 echo "⚙️  tsc"
 echo ""
-tsc_result="$( cd "${OUTPUT}" && run_tool tsc --noEmit 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && run_node "${ROOT}/bin/compile.cjs" "${COMPILED_DIR}" 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -559,7 +569,7 @@ echo ""
 echo "⚙️  jest <...>"
 echo ""
 
-cd "${OUTPUT}" && run_tool jest "${OUTPUT}*" \
+cd "${OUTPUT}" && run_tool jest "${COMPILED_DIR}/" \
                   --bail 1 \
                   --ci \
                   --colors \
@@ -568,7 +578,7 @@ cd "${OUTPUT}" && run_tool jest "${OUTPUT}*" \
                   --outputFile="${result_file}" \
                   --passWithNoTests \
                   --reporters "${REPORTER}" \
-                  --roots "${OUTPUT}" \
+                  --roots "${COMPILED_DIR}" \
                   --setupFilesAfterEnv ${SETUP} \
                   --verbose false \
                   --testLocationInResults
