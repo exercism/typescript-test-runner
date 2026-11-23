@@ -289,6 +289,17 @@ else
   fi
 fi
 
+# Look for type tests (*.tst.ts). If there are any, bin/compile.cjs runs
+# them with tstyche after the type check, and step 2 reads the results.
+has_type_test=false
+type_tests=""
+if test -d "${OUTPUT}__typetests__/"; then
+  type_tests=$(ls -aln1 "${OUTPUT}__typetests__/" | grep "tst.ts$" || true)
+  if [ -n "${type_tests}" ]; then
+    has_type_test=true
+  fi
+fi
+
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
 echo "  ➤  Step 1/3: Build (tests: does it compile?)                "
@@ -324,7 +335,7 @@ trap 'rm -rf "${COMPILED_DIR}"' EXIT
 
 echo "⚙️  tsc"
 echo ""
-tsc_result="$( cd "${OUTPUT}" && node "${ROOT}/bin/compile.cjs" "${COMPILED_DIR}" 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && TYPE_TESTS="${has_type_test}" node "${ROOT}/bin/compile.cjs" "${COMPILED_DIR}" 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -400,16 +411,11 @@ echo "  ➤  Step 2/3: Type tests (tests: are the types as expected?) "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-has_type_test=false
-
 if test -d "${OUTPUT}__typetests__/"; then
-  type_tests=$(ls -aln1 "${OUTPUT}__typetests__/" | grep "tst.ts$")
-
   if [ -z "${type_tests}" ]; then
     # TODO: check the config file to see if tstyche tests were expected or not
     echo "✅ no type tests (*.tst.ts) discovered."
   else
-    has_type_test=true
     echo "✔️  type tests discovered."
     # List the files found above. Asking tstyche to list them (--listFiles)
     # started it an extra time.
@@ -418,7 +424,8 @@ if test -d "${OUTPUT}__typetests__/"; then
     echo ""
     echo "⚙️  tstyche"
     echo ""
-    cd "${OUTPUT}" && "${ROOT}/node_modules/.bin/tstyche" --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
+    # bin/compile.cjs ran tstyche in step 1, and wrote its output to these
+    # files. Starting the tstyche command took about 3 seconds more.
 
     tstyche_error_output="$(cat "${OUTPUT}tstyche.stderr.txt")"
 

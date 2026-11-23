@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Synopsis:
-# Run the test runner once on a small exercise while building the Docker
+# Run the test runner on a small exercise while building the Docker
 # image, with NODE_COMPILE_CACHE set (see the Dockerfile). Node saves the
 # compiled code of every module it loads (TypeScript, tstyche, expect and
 # their dependencies) in that folder. Each run then loads the compiled code instead
@@ -48,11 +48,19 @@ test('answer returns a number', () => {
 })
 TS
 
-"${ROOT}/bin/run.sh" warm-up "${WARM_UP_DIR}" "${WARM_UP_DIR}" > /dev/null
-
 # Check the warm-up run passed and ran the test, so a broken runner fails the
 # image build
-grep -q '"status": "pass"' "${WARM_UP_DIR}results.json"
-grep -q '"name": "answer > is 42"' "${WARM_UP_DIR}results.json"
+run_warm_up() {
+  "${ROOT}/bin/run.sh" warm-up "${WARM_UP_DIR}" "${WARM_UP_DIR}" > /dev/null
+  grep -q '"status": "pass"' "${WARM_UP_DIR}results.json"
+  grep -q '"name": "answer > is 42"' "${WARM_UP_DIR}results.json"
+}
+
+# With type tests, bin/compile.cjs uses the copy of TypeScript loaded by
+# tstyche, which Node does not cache. Run once without the type tests too,
+# so the cache has TypeScript for the runs of exercises without them.
+run_warm_up
+rm "${WARM_UP_DIR}__typetests__/warm-up.tst.ts"
+run_warm_up
 
 rm -rf "$(dirname "${WARM_UP_DIR}")"
