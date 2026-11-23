@@ -1,12 +1,5 @@
 import { AstParser, extractTests } from '@exercism/static-analysis'
 import type { ExtractedTestCase, ParsedSource } from '@exercism/static-analysis'
-import type { ConsoleBuffer } from '@jest/console'
-import type {
-  AggregatedResult,
-  AssertionResult,
-  TestResult,
-} from '@jest/test-result'
-import type { Config } from '@jest/types'
 import fs from 'fs'
 import path from 'path'
 
@@ -36,24 +29,37 @@ type ExerciseConfig = {
   }
 }
 
+// One message printed to the console, as buffered by node-test/console.cts
+export interface ConsoleEntry {
+  type: string
+  message: string
+  // The stack trace of the console call. The reporter uses it to work out
+  // which test printed the message, as Jest did.
+  origin: string
+}
+
+// One test's result, as reported by Node's test runner
+export interface TestOutcome {
+  name: string
+  // What the test threw, if it failed
+  error?: unknown
+}
+
 const OUTPUT_VERSION = 3
 
 export class Output {
   private readonly results: Partial<OutputInterface> &
     Pick<OutputInterface, 'tests'>
-  private readonly globalConfig: Config.GlobalConfig
-  private readonly outputFile: string
+  private readonly outputDir: string
   private readonly sources: Record<string, ParsedSource>
   private readonly tests: Record<string, ReturnType<typeof extractTests>>
   private readonly config: null | ExerciseConfig
 
-  constructor(globalConfig: Config.GlobalConfig) {
-    this.globalConfig = globalConfig
+  constructor(outputDir: string) {
+    this.outputDir = outputDir
     this.results = { tests: [] }
-    this.outputFile =
-      this.globalConfig.outputFile ?? path.join(process.cwd(), 'results.json')
 
-    this.config = findConfig(path.dirname(this.outputFile))
+    this.config = findConfig(outputDir)
     this.sources = {}
     this.tests = {}
   }
@@ -63,12 +69,20 @@ export class Output {
     this.results.message = message
   }
 
-  public finish(aggregatedResults: AggregatedResult): void {
-    // If Jest found no test files, report that no tests ran. Checking here
-    // saves run.sh from starting Jest a second time to list the test files.
-    // run.sh replaces this with a pass if the type tests ran.
-    if (!this.results.status && aggregatedResults.numTotalTestSuites === 0) {
-      const artifact = JSON.stringify(
+  // Returns the contents of results.json
+  public finish({
+    topLevel,
+    skipped,
+  }: {
+    topLevel: number
+    skipped: number
+  }): string {
+    const outcomes = this.results.tests
+
+    // If no test file ran, report that no tests ran. run.sh replaces this
+    // with a pass if the type tests ran.
+    if (!this.results.status && topLevel === 0) {
+      return JSON.stringify(
         {
           version: 1,
           status: 'error',
@@ -80,26 +94,17 @@ export class Output {
         undefined,
         2
       )
-      fs.writeFileSync(this.outputFile, artifact)
-      return
     }
 
     if (!this.results.status) {
       this.results.status =
-        aggregatedResults.numRuntimeErrorTestSuites === 0 &&
-        aggregatedResults.numFailedTestSuites === 0 &&
-        // Pending tests are skipped tests. test.skip tests are fine if the
+        // Skipped tests are checked below. test.skip tests are fine if the
         // exercise reports that there are optional tests.
         //
-        aggregatedResults.numFailedTests === 0
-          ? 'pass'
-          : 'fail'
+        outcomes.every((test) => test.status === 'pass') ? 'pass' : 'fail'
 
       // Divert status if nothing ran
-      if (
-        this.results.status === 'pass' &&
-        aggregatedResults.numPassedTests === 0
-      ) {
+      if (this.results.status === 'pass' && outcomes.length === 0) {
         this.results.status = 'fail'
         this.error(
           'Expected to run at least one test, but none were found. This can ' +
@@ -109,11 +114,7 @@ export class Output {
         )
       }
 
-      if (
-        this.results.status === 'pass' &&
-        (aggregatedResults.numPendingTests !== 0 ||
-          aggregatedResults.numPendingTestSuites !== 0)
-      ) {
+      if (this.results.status === 'pass' && skipped !== 0) {
         if (
           !this.configFlag('flag.tests.includes-optional') &&
           this.config?.custom
@@ -198,12 +199,11 @@ export class Output {
     // Re-order the output so that tests output shows below main output
     const { status, message } = this.results
 
-    const artifact = JSON.stringify(
+    return JSON.stringify(
       { status, message, tests, version: OUTPUT_VERSION },
       undefined,
       2
     )
-    fs.writeFileSync(this.outputFile, artifact)
   }
 
   private configFlag(
@@ -216,89 +216,44 @@ export class Output {
     return this.config.custom[flag] as boolean
   }
 
-  public testFinished(
-    compiledSpecFilePath: string,
-    compiledTestResult: TestResult,
-    results: AggregatedResult
-  ): void {
-    // Jest ran the compiled .js files. Report on the .ts files the student
-    // sees, as when Babel compiled them inside Jest.
-    const specFilePath = this.sourceOf(compiledSpecFilePath)
-    const testResult = {
-      ...compiledTestResult,
-      testFilePath: this.sourceOf(compiledTestResult.testFilePath),
-    }
-
-    // Syntax errors etc. These are runtime errors: failures to run
-    if (results.numRuntimeErrorTestSuites > 0) {
-      this.error(
-        sanitizeErrorMessage(
-          specFilePath,
-          testResult.failureMessage ??
-            'Something went wrong when running the tests.'
-        )
+  // The test file failed to load, for example because the solution threw
+  // an error when it was imported. Jest called this "Test suite failed to
+  // run".
+  public suiteFailed(specFilePath: string, error: unknown): void {
+    this.error(
+      sanitizeErrorMessage(
+        specFilePath,
+        `  \u001b[1m● \u001b[22mTest suite failed to run\n\n${indent(
+          errorHeader(error)
+        )}\n`
       )
+    )
+  }
+
+  public fileFinished(
+    specFilePath: string,
+    outcomes: TestOutcome[],
+    consoleEntries: ConsoleEntry[]
+  ): void {
+    if (this.results.status === 'error') {
       return
     }
 
-    // Suites ran fine. Output normally.
-    results.testResults.forEach((testResult) => {
-      this.testInnerFinished(
-        specFilePath,
-        { ...testResult, testFilePath: this.sourceOf(testResult.testFilePath) },
-        testResult.testResults
-      )
-    })
-  }
-
-  // bin/run.sh sets COMPILED_DIR to the folder with the compiled files.
-  // This turns a path in that folder into the path of its .ts file.
-  private sourceOf(compiledPath: string): string {
-    const compiledDir = process.env.COMPILED_DIR
-    if (!compiledDir || !compiledPath.startsWith(path.join(compiledDir, '/'))) {
-      return compiledPath
-    }
-
-    return path
-      .join(
-        path.dirname(this.outputFile),
-        path.relative(compiledDir, compiledPath)
-      )
-      .replace(/\.js$/, '.ts')
-  }
-
-  private getSource(specFilePath: string): {
-    source: ParsedSource
-    tests: ExtractedTestCase[]
-  } {
-    if (!this.sources[specFilePath]) {
-      const [{ program, source }] = AstParser.ANALYZER.parseSync(
-        fs.readFileSync(specFilePath).toString()
-      )
-      this.tests[specFilePath] = extractTests(program)
-      this.sources[specFilePath] = { program, source }
-    }
-
-    return {
-      source: this.sources[specFilePath],
-      tests: this.tests[specFilePath],
-    }
-  }
-
-  public testInnerFinished(
-    specFilePath: string,
-    testResult: TestResult,
-    innerResults: AssertionResult[]
-  ): void {
-    const consoleOutputs: Record<string, string> = testResult.console
-      ? buildOutput(
-          specFilePath,
-          testResult.console,
-          this.getSource(specFilePath)
-        )
+    const consoleOutputs: Record<string, string> = consoleEntries.length
+      ? buildOutput(specFilePath, consoleEntries, this.getSource(specFilePath))
       : {}
 
-    const outputs = buildTestOutput(specFilePath, testResult, innerResults)
+    const outputs = outcomes.map(({ name, error }) => ({
+      name,
+      status: error === undefined ? ('pass' as const) : ('fail' as const),
+      message:
+        error === undefined
+          ? ''
+          : sanitizeErrorMessage(
+              specFilePath,
+              failureMessage(specFilePath, error)
+            ),
+    }))
     const firstFailureIndex = outputs.findIndex(
       (output) => output.status === 'fail'
     )
@@ -323,14 +278,41 @@ export class Output {
     )
   }
 
-  public testStarted(_path: string): void {
-    // noop
+  // bin/run.sh sets COMPILED_DIR to the folder with the compiled files.
+  // This turns a path in that folder into the path of its .ts file.
+  public sourceOf(compiledPath: string): string {
+    const compiledDir = process.env.COMPILED_DIR
+    if (!compiledDir || !compiledPath.startsWith(path.join(compiledDir, '/'))) {
+      return compiledPath
+    }
+
+    return path
+      .join(this.outputDir, path.relative(compiledDir, compiledPath))
+      .replace(/\.js$/, '.ts')
+  }
+
+  private getSource(specFilePath: string): {
+    source: ParsedSource
+    tests: ExtractedTestCase[]
+  } {
+    if (!this.sources[specFilePath]) {
+      const [{ program, source }] = AstParser.ANALYZER.parseSync(
+        fs.readFileSync(specFilePath).toString()
+      )
+      this.tests[specFilePath] = extractTests(program)
+      this.sources[specFilePath] = { program, source }
+    }
+
+    return {
+      source: this.sources[specFilePath],
+      tests: this.tests[specFilePath],
+    }
   }
 }
 
 function buildOutput(
   specFilePath: string,
-  buffer: ConsoleBuffer,
+  buffer: ConsoleEntry[],
   { tests }: { source: ParsedSource; tests: ExtractedTestCase[] }
 ): Record<string, string> {
   const outputs = buffer.reduce<Record<string, string[]>>((outputs, entry) => {
@@ -419,51 +401,49 @@ function buildOutput(
   }, {})
 }
 
-function buildTestOutput(
-  path: string,
-  testResult: TestResult,
-  inner: AssertionResult[]
-): Pick<OutputTestInterface, 'name' | 'status' | 'message'>[] {
-  if (testResult.testExecError) {
-    return [
-      {
-        name: testResult.testFilePath,
-        status: 'error',
-        message: sanitizeErrorMessage(
-          path,
-          testResult.failureMessage
-            ? removeStackTrace(testResult.failureMessage)
-            : testResult.testExecError.message
-        ),
-      },
-    ]
+// Jest showed the error with the stack frames inside the solution, and cut
+// the stack at the test itself. Node's stack also goes on into the test
+// runner, so cut it at the first frame in the test file, and leave out the
+// frames inside Node.
+function failureMessage(specFilePath: string, error: unknown): string {
+  const stack =
+    error instanceof Error && typeof error.stack === 'string'
+      ? error.stack
+      : String(error)
+
+  const lines = stack.split('\n')
+  const firstFrame = lines.findIndex((line) => FRAME.test(line))
+  if (firstFrame === -1) {
+    return stack
   }
 
-  return inner
-    .filter(
-      (assert) => assert.status !== 'skipped' && assert.status !== 'pending'
+  const frames = lines.slice(firstFrame)
+  const testFrame = frames.findIndex((line) => line.includes(specFilePath))
+
+  return lines
+    .slice(0, firstFrame)
+    .concat(
+      frames
+        .slice(0, testFrame === -1 ? undefined : testFrame)
+        .filter((line) => !line.includes('(node:') && !line.includes(' node:'))
     )
-    .map((assert) => {
-      return {
-        name: assert.ancestorTitles.concat(assert.title).join(' > '),
-        status: assert.status === 'passed' ? 'pass' : 'fail',
-        message: sanitizeErrorMessage(
-          testResult.testFilePath,
-          assert.failureMessages.map(removeStackTrace).join('\n')
-        ),
-      }
-    })
+    .join('\n')
+    .trimEnd()
 }
 
-function removeStackTrace(message: string): string {
-  const i = message.indexOf('  at Object.')
-  if (i === -1) {
-    return message
-  }
-  const split = message.slice(0, i).lastIndexOf('\n')
-  return split === -1
-    ? message.slice(0, i).trimEnd()
-    : message.slice(0, split).trimEnd()
+const FRAME = /^\s+at /
+
+function errorHeader(error: unknown): string {
+  return error instanceof Error
+    ? `${error.name}: ${error.message}`
+    : String(error)
+}
+
+function indent(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => `    ${line}`)
+    .join('\n')
 }
 
 function sanitizeErrorMessage(specFilePath: string, message: string): string {

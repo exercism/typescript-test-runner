@@ -3,8 +3,8 @@
 # Synopsis:
 # Run the test runner once on a small exercise while building the Docker
 # image, with NODE_COMPILE_CACHE set (see the Dockerfile). Node saves the
-# compiled code of every module it loads (TypeScript, tstyche, Jest and its
-# dependencies) in that folder. Each run then loads the compiled code instead
+# compiled code of every module it loads (TypeScript, tstyche, expect and
+# their dependencies) in that folder. Each run then loads the compiled code instead
 # of compiling about 20 MB of JavaScript again.
 
 set -euo pipefail
@@ -50,7 +50,9 @@ TS
 
 "${ROOT}/bin/run.sh" warm-up "${WARM_UP_DIR}" "${WARM_UP_DIR}" > /dev/null
 
-# Check the warm-up run passed, so a broken runner fails the image build
+# Check the warm-up run passed and ran the test, so a broken runner fails the
+# image build
 grep -q '"status": "pass"' "${WARM_UP_DIR}results.json"
+grep -q '"name": "answer > is 42"' "${WARM_UP_DIR}results.json"
 
 rm -rf "$(dirname "${WARM_UP_DIR}")"

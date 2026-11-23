@@ -15,9 +15,12 @@ export default [
       'test/fixtures/**/*',
       'test_exercises/**/*',
       '.pnp.*',
-      'babel.config.js',
       'jest.config.js',
-      'jest.runner.config.js',
     ],
+  },
+  {
+    // The shared config includes eslint-plugin-jest, which reads Jest's
+    // version from the jest package. The runner no longer installs Jest.
+    settings: { jest: { version: 29 } },
   },
 ]

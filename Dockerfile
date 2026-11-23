@@ -66,12 +66,9 @@ RUN corepack yarn --version
 
 # Node saves the compiled code of each module it loads in this folder, and
 # reuses it in later runs. bin/warm-up.sh runs the test runner once to fill
-# it, so each run skips compiling TypeScript, tstyche and Jest.
+# it, so each run skips compiling TypeScript, tstyche and expect.
 ENV NODE_COMPILE_CACHE=/opt/test-runner/.node-compile-cache
-RUN set -ex; \
-  bin/warm-up.sh; \
-  # remove Jest's cache from the warm-up, so runs start with an empty one
-  rm -rf /tmp/jest_*
+RUN bin/warm-up.sh
 
 ENTRYPOINT [ "/opt/test-runner/bin/run.sh" ]
 

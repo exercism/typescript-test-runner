@@ -85,9 +85,8 @@ ROOT="$(realpath $(dirname "$0")/..)"
 if test -f "${ROOT}/.prefetch-list"; then
   ( nice -n 19 xargs -P 8 -n 50 -a "${ROOT}/.prefetch-list" cat > /dev/null 2>&1 & )
 fi
-REPORTER="$ROOT/dist/reporter.js"
-SETUP="$ROOT/dist/jest/setup.js"
-CONFIG="$ROOT/jest.runner.config.js"
+REPORTER="$ROOT/dist/node-test/reporter.mjs"
+SETUP="$ROOT/dist/node-test/setup.cjs"
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
@@ -141,18 +140,13 @@ else
   echo ""
 fi
 
-echo "If the solution contains babel.config.js, package.json,        "
-echo "or tsconfig.json at the root, these configuration files will   "
+echo "If the solution contains package.json or tsconfig.json at the  "
+echo "root, these configuration files will                          "
 echo "be used during the test-runner process which we do not want.   "
 echo "The test-runner will therefore temporarily rename these files."
 echo ""
 
 # Rename configuration files
-if test -f "${OUTPUT}babel.config.js"; then
-  echo "✔️  renaming babel.config.js in output so it can be replaced."
-  mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.💥.bak" || true
-fi;
-
 if test -f "${OUTPUT}package.json"; then
   echo "✔️  renaming package.json in output so it can be replaced."
   mv "${OUTPUT}package.json" "${OUTPUT}package.json.💥.bak" || true
@@ -218,9 +212,6 @@ else
     cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
   fi
 
-  echo "✔️  babel.config.js from root to output"
-  cp "${ROOT}/babel.config.js" "${OUTPUT}babel.config.js"
-
   echo "✔️  package.json from root to output"
   cp "${ROOT}/package.json" "${OUTPUT}package.json"
 
@@ -275,12 +266,6 @@ else
       echo ""
 
       # Restore configuration files
-      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-        echo "✔️  restoring babel.config.js in output"
-        unlink "${OUTPUT}babel.config.js"
-        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-      fi;
-
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
         if test -f "${OUTPUT}package.json"; then
@@ -383,8 +368,7 @@ fi;
 
 # bin/compile.cjs type-checks the solution as `tsc --noEmit` does, with the
 # same output and exit code. It then writes the JavaScript and source maps
-# into COMPILED_DIR, and Jest runs those files without a transformer. Before,
-# Jest loaded Babel and compiled every file a second time.
+# into COMPILED_DIR, and Node runs those files as they are.
 COMPILED_DIR="$(mktemp -d)"
 export COMPILED_DIR
 trap 'rm -rf "${COMPILED_DIR}"' EXIT
@@ -415,12 +399,6 @@ if [ $test_exit -eq 2 ]; then
   echo ""
 
   # Restore configuration files
-  if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-    echo "✔️  restoring babel.config.js in output"
-    unlink "${OUTPUT}babel.config.js"
-    mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-  fi;
-
   if test -f "${OUTPUT}package.json.💥.bak"; then
     echo "✔️  restoring package.json in output"
     if test -f "${OUTPUT}package.json"; then
@@ -511,12 +489,6 @@ if test -d "${OUTPUT}__typetests__/"; then
       echo ""
 
       # Restore configuration files
-      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-        echo "✔️  restoring babel.config.js in output"
-        unlink "${OUTPUT}babel.config.js"
-        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-      fi;
-
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
         if test -f "${OUTPUT}package.json"; then
@@ -562,35 +534,44 @@ echo "  ➤  Step 3/3: Execution (tests: does the solution work?)     "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Run tests. If Jest finds no test files, the reporter writes the "no tests"
-# error to results.json. Checking for that here would mean starting Jest a
-# second time (with --listTests) just to list the test files.
+# Run the tests with Node's built-in test runner, in this process
+# (--test-isolation=none). The setup module gives the tests Jest's API and
+# `expect`, and the reporter writes results.json. If there are no test
+# files, the reporter writes the "no tests" error.
+#
+# - --enable-source-maps makes stack traces and console origins name the .ts
+#   lines, as with Jest.
+# - --test-timeout matches Jest's default of 5 seconds per test.
+# - --test-force-exit stops the process once the tests have finished, even
+#   if the solution leaves a timer running. Jest wrote results.json in that
+#   case too, but then kept running until the run timed out.
+# - FORCE_COLOR keeps the colours in expect's messages, as Jest's --colors
+#   did.
+# - NODE_PATH lets the compiled files, which are outside the solution, load
+#   the runner's packages, as before.
 echo ""
-echo "⚙️  jest <...>"
+echo "⚙️  node --test <...>"
 echo ""
 
-cd "${OUTPUT}" && run_tool jest "${COMPILED_DIR}/" \
-                  --bail 1 \
-                  --ci \
-                  --colors \
-                  --config ${CONFIG} \
-                  --noStackTrace \
-                  --outputFile="${result_file}" \
-                  --passWithNoTests \
-                  --reporters "${REPORTER}" \
-                  --roots "${COMPILED_DIR}" \
-                  --setupFilesAfterEnv ${SETUP} \
-                  --verbose false \
-                  --testLocationInResults
+cd "${OUTPUT}" && FORCE_COLOR=1 NODE_PATH="${ROOT}/node_modules" run_node \
+                  --enable-source-maps \
+                  --require "${SETUP}" \
+                  --test \
+                  --test-isolation=none \
+                  --test-timeout=5000 \
+                  --test-force-exit \
+                  --test-reporter="${REPORTER}" \
+                  --test-reporter-destination="${result_file}" \
+                  "${COMPILED_DIR}/**/*.test.js"
 
-# Convert exit(1) (jest worked, but there are failing tests) to exit(0)
+# Convert exit(1) (the tests ran, but some failed) to exit(0)
 test_exit=$?
 
 if [ $test_exit -eq 1 ]; then
   echo "❌ not all tests (*.test.ts) passed."
 elif grep -q "not subjected to any type or execution tests" "${result_file}"; then
-  # Jest found no test files, and the reporter wrote the "no tests" error.
-  echo "✔️  no jest tests (*.test.ts) discovered."
+  # There were no test files, and the reporter wrote the "no tests" error.
+  echo "✔️  no tests (*.test.ts) discovered."
 
   if [ "$has_type_test" = true ]; then
     echo ""
@@ -612,12 +593,6 @@ echo "they were disabled and now need to be restored."
 echo ""
 
 # Restore configuration files
-if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-  echo "✔️  restoring babel.config.js in output"
-  unlink "${OUTPUT}babel.config.js"
-  mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-fi;
-
 if test -f "${OUTPUT}package.json.💥.bak"; then
   echo "✔️  restoring package.json in output"
   if test -f "${OUTPUT}package.json"; then

@@ -2,9 +2,8 @@
 
 // Synopsis:
 // Type-check the solution exactly as `tsc --noEmit` does, then write the
-// JavaScript for Jest into an output folder, so Jest can run it without a
-// transformer. Before, Jest loaded Babel and compiled every file again
-// after tsc had already parsed and checked them.
+// JavaScript into an output folder, so Node can run the tests without a
+// transformer.
 
 // Arguments:
 // $1: folder to write the JavaScript and source maps to
@@ -19,10 +18,62 @@ const ts = require('typescript')
 
 const outDir = path.resolve(process.argv[2])
 const rootDir = process.cwd()
+const setupModule = path.resolve(__dirname, '../dist/node-test/setup.cjs')
 
-// Write source maps that point back at the original .ts files. Jest reads
-// them (through source-map-support) for stack traces and for the origin of
-// console output, so both name the .ts lines the student wrote.
+// Change the imports while writing the JavaScript, so Node can load the
+// compiled files without a resolve hook:
+// - './two-fer.ts' becomes './two-fer.js', the name of the compiled file.
+// - '@jest/globals' becomes the runner's setup module, which gives the
+//   tests describe, it and Jest's expect on Node's test runner.
+function rewriteSpecifier(specifier) {
+  if (specifier === '@jest/globals') {
+    return setupModule
+  }
+  if (specifier.startsWith('.') && specifier.endsWith('.ts')) {
+    return specifier.replace(/\.ts$/, '.js')
+  }
+  return specifier
+}
+
+function rewriteImports(context) {
+  const { factory } = context
+  const visit = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const specifier = rewriteSpecifier(node.moduleSpecifier.text)
+      if (specifier !== node.moduleSpecifier.text) {
+        const literal = factory.createStringLiteral(specifier)
+        return ts.isImportDeclaration(node)
+          ? factory.updateImportDeclaration(
+              node,
+              node.modifiers,
+              node.importClause,
+              literal,
+              node.attributes
+            )
+          : factory.updateExportDeclaration(
+              node,
+              node.modifiers,
+              node.isTypeOnly,
+              node.exportClause,
+              literal,
+              node.attributes
+            )
+      }
+    }
+    return node
+  }
+  return (sourceFile) => ts.visitEachChild(sourceFile, visit, context)
+}
+
+const transformers = { before: [rewriteImports] }
+
+// Write source maps that point back at the original .ts files. Node reads
+// them (--enable-source-maps) for stack traces and for the origin of console
+// output, so both name the .ts lines the student wrote.
 function writeWithSourceMap(jsFile, code, map, sourceFile) {
   const parsed = JSON.parse(map)
   parsed.sources = sourceFile
@@ -65,6 +116,7 @@ function transpileTestFiles(program, options) {
           {
             fileName: full,
             reportDiagnostics: true,
+            transformers,
             compilerOptions: {
               ...options,
               module: ts.ModuleKind.CommonJS,
@@ -77,7 +129,8 @@ function transpileTestFiles(program, options) {
         )
         // TypeScript still writes JavaScript for a test file with a syntax
         // error. Babel stopped with a SyntaxError instead, so the compiled
-        // file throws one, which Jest reports as the suite failing to run.
+        // file throws one, which the reporter shows as the suite failing to
+        // run.
         const syntaxError = diagnostics.find(
           (diagnostic) =>
             diagnostic.file &&
@@ -138,7 +191,13 @@ function emit(program) {
   options.noEmitOnError = false
 
   const outputs = new Map()
-  program.emit(undefined, (fileName, text) => outputs.set(fileName, text))
+  program.emit(
+    undefined,
+    (fileName, text) => outputs.set(fileName, text),
+    undefined,
+    false,
+    transformers
+  )
   for (const [fileName, text] of outputs) {
     if (fileName.endsWith('.js')) {
       writeWithSourceMap(fileName, text, outputs.get(`${fileName}.map`))
@@ -148,12 +207,16 @@ function emit(program) {
   transpileTestFiles(program, options)
 }
 
-ts.executeCommandLine(ts.sys, (program) => {
-  if (typeof program.getCompilerOptions !== 'function') {
-    return
-  }
-  if (typeof program.getProgram === 'function') {
-    program = program.getProgram()
-  }
-  emit(program)
-}, process.argv.slice(3))
+ts.executeCommandLine(
+  ts.sys,
+  (program) => {
+    if (typeof program.getCompilerOptions !== 'function') {
+      return
+    }
+    if (typeof program.getProgram === 'function') {
+      program = program.getProgram()
+    }
+    emit(program)
+  },
+  process.argv.slice(3)
+)
