@@ -64,6 +64,26 @@ export class Output {
   }
 
   public finish(aggregatedResults: AggregatedResult): void {
+    // If Jest found no test files, report that no tests ran. Checking here
+    // saves run.sh from starting Jest a second time to list the test files.
+    // run.sh replaces this with a pass if the type tests ran.
+    if (!this.results.status && aggregatedResults.numTotalTestSuites === 0) {
+      const artifact = JSON.stringify(
+        {
+          version: 1,
+          status: 'error',
+          message:
+            'The submitted code was not subjected to any type or execution ' +
+            'tests. It did compile correctly, but something is wrong because ' +
+            'at least one test was expected.',
+        },
+        undefined,
+        2
+      )
+      fs.writeFileSync(this.outputFile, artifact)
+      return
+    }
+
     if (!this.results.status) {
       this.results.status =
         aggregatedResults.numRuntimeErrorTestSuites === 0 &&

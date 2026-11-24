@@ -77,6 +77,14 @@ OUTPUT="${OUTPUT%/}/"
 set -euo pipefail
 
 ROOT="$(realpath $(dirname "$0")/..)"
+
+# Read the files a run needs into the page cache, 8 at a time, in the
+# background. The Docker image records the list at build time. On a machine
+# where the image's files are not in the page cache yet, Node read them one
+# at a time as it needed them, which took several seconds per run.
+if test -f "${ROOT}/.prefetch-list"; then
+  ( nice -n 19 xargs -P 8 -n 50 -a "${ROOT}/.prefetch-list" cat > /dev/null 2>&1 & )
+fi
 REPORTER="$ROOT/dist/reporter.js"
 SETUP="$ROOT/dist/jest/setup.js"
 CONFIG="$ROOT/jest.runner.config.js"
@@ -466,7 +474,9 @@ if test -d "${OUTPUT}__typetests__/"; then
   else
     has_type_test=true
     echo "✔️  type tests discovered."
-    cd "${OUTPUT}" && run_tool tstyche --listFiles
+    # List the files found above. Asking tstyche to list them (--listFiles)
+    # started it an extra time.
+    echo "${type_tests}"
 
     echo ""
     echo "⚙️  tstyche"
@@ -542,73 +552,9 @@ echo "  ➤  Step 3/3: Execution (tests: does the solution work?)     "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-jest_tests=$(cd "${OUTPUT}" && run_tool jest --listTests --passWithNoTests) || false
-
-if [ -z "${jest_tests}" ]; then
-  echo "✔️  no jest tests (*.test.ts) discovered."
-  # TODO: check the config file to see if jest tests were expected or not
-  #       flag.tests.jest
-
-  if [ "$has_type_test" = true ]; then
-    echo ""
-    echo "✅  did run type tests, so this is fine."
-
-    # TODO: use results from tstyche
-    runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
-    echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"${runner_result}\" }" > $result_file
-  else
-    echo "❌ neither type tests, nor execution tests ran"
-    runner_result="The submitted code was not subjected to any type or execution tests. It did compile correctly, but something is wrong because at least one test was expected."
-    echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"${runner_result}\" }" > $result_file
-    sed -Ei ':a;N;$!ba;s/\r{0,1}\n/\\n/g' $result_file
-  fi
-
-  echo ""
-  echo "If the solution previously contained configuration files,    "
-  echo "they were disabled and now need to be restored."
-  echo ""
-
-  # Restore configuration files
-  if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-    echo "✔️  restoring babel.config.js in output"
-    unlink "${OUTPUT}babel.config.js"
-    mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-  fi;
-
-  if test -f "${OUTPUT}package.json.💥.bak"; then
-    echo "✔️  restoring package.json in output"
-    if test -f "${OUTPUT}package.json"; then
-      unlink "${OUTPUT}package.json"
-    fi
-    mv "${OUTPUT}package.json.💥.bak" "${OUTPUT}package.json" || true
-  fi;
-
-  if test -f "${OUTPUT}tsconfig.json.💥.bak"; then
-    echo "✔️  restoring tsconfig.json in output"
-    mv "${OUTPUT}tsconfig.json.💥.bak" "${OUTPUT}tsconfig.json" || true
-  fi;
-
-  if test -f "${OUTPUT}yarn.lock.💥.bak"; then
-    echo "✔️  restoring yarn.lock in output"
-    if test -f "${OUTPUT}yarn.lock"; then
-      unlink "${OUTPUT}yarn.lock"
-    fi
-    mv "${OUTPUT}yarn.lock.💥.bak" "${OUTPUT}yarn.lock" || true
-  fi;
-
-  echo ""
-  echo "---------------------------------------------------------------"
-  echo "The results of this run have been written to 'results.json'."
-  echo "👁️  ${result_file}"
-
-  # Test runner didn't fail!
-  exit 0
-fi
-
-echo "✔️  jest tests (*.test.ts) discovered."
-echo $jest_tests
-
-# Run tests
+# Run tests. If Jest finds no test files, the reporter writes the "no tests"
+# error to results.json. Checking for that here would mean starting Jest a
+# second time (with --listTests) just to list the test files.
 echo ""
 echo "⚙️  jest <...>"
 echo ""
@@ -632,6 +578,20 @@ test_exit=$?
 
 if [ $test_exit -eq 1 ]; then
   echo "❌ not all tests (*.test.ts) passed."
+elif grep -q "not subjected to any type or execution tests" "${result_file}"; then
+  # Jest found no test files, and the reporter wrote the "no tests" error.
+  echo "✔️  no jest tests (*.test.ts) discovered."
+
+  if [ "$has_type_test" = true ]; then
+    echo ""
+    echo "✅  did run type tests, so this is fine."
+
+    # TODO: use results from tstyche
+    runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
+    echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"${runner_result}\" }" > $result_file
+  else
+    echo "❌ neither type tests, nor execution tests ran"
+  fi
 else
   echo "✅ all tests (*.test.ts) passed."
 fi;
