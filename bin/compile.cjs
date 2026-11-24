@@ -3,8 +3,8 @@
 // Synopsis:
 // Type-check the solution exactly as `tsc --noEmit` does, then write the
 // JavaScript into an output folder as ES modules, so Node can run the tests
-// without a transformer. src/setup.mts finds the compiled files for the
-// imports in the tests and the solution.
+// without a transformer. It also rewrites the import paths in that
+// JavaScript, so Node finds every file (see rewriteImportPaths).
 
 // Arguments:
 // $1: folder to write the JavaScript and source maps to
@@ -14,6 +14,7 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
+const { pathToFileURL } = require('node:url')
 const { stripVTControlCharacters } = require('node:util')
 const ts = require('typescript')
 
@@ -38,6 +39,105 @@ function writeWithSourceMap(jsFile, code, map, sourceFile) {
 function outputPathOf(file) {
   return path.join(outDir, path.relative(rootDir, file).replace(/\.ts$/, '.js'))
 }
+
+// Node only finds a relative import if it names the file in full, and only
+// finds `@jest/globals` in a node_modules folder. Jest found both itself. A
+// module hook could fix both while the files load, but Node's hooks are not
+// yet stable. So this changes the paths in the JavaScript tsc writes:
+//
+// - `'./two-fer.ts'` and `'./two-fer'` become `'./two-fer.js'`, and
+//   `'./lib'` becomes `'./lib/index.js'`. The track's files name the .ts
+//   file, but solutions to earlier versions of the exercises leave out the
+//   extension.
+// - `'@jest/globals'` becomes the URL of the runner's jest-globals.mjs. So
+//   solutions still can't import any of the runner's packages.
+const JEST_GLOBALS = pathToFileURL(
+  path.join(__dirname, '..', 'dist', 'jest-globals.mjs')
+).href
+
+function isFile(file) {
+  return fs.statSync(file, { throwIfNoEntry: false })?.isFile() ?? false
+}
+
+function rewriteImportPath(specifier, fromFile) {
+  if (specifier === '@jest/globals') {
+    return JEST_GLOBALS
+  }
+  if (!specifier.startsWith('./') && !specifier.startsWith('../')) {
+    return specifier
+  }
+  if (/\.[cm]?ts$/.test(specifier) && !specifier.endsWith('.d.ts')) {
+    return specifier.replace(/ts$/, 'js')
+  }
+  const target = path.resolve(path.dirname(fromFile), specifier)
+  if (isFile(`${target}.ts`)) {
+    return `${specifier}.js`
+  }
+  if (isFile(path.join(target, 'index.ts'))) {
+    return `${specifier.replace(/\/$/, '')}/index.js`
+  }
+  return specifier
+}
+
+// A transformer that tsc runs on each file after removing the types. It
+// changes only the module paths of imports, exports and import() calls.
+function rewriteImportPaths(context) {
+  const { factory } = context
+  return (sourceFile) => {
+    const rewrite = (literal) => {
+      const next = rewriteImportPath(literal.text, sourceFile.fileName)
+      return next === literal.text ? literal : factory.createStringLiteral(next)
+    }
+
+    const visit = (node) => {
+      if (
+        ts.isImportDeclaration(node) &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        return factory.updateImportDeclaration(
+          node,
+          node.modifiers,
+          node.importClause,
+          rewrite(node.moduleSpecifier),
+          node.attributes
+        )
+      }
+      if (
+        ts.isExportDeclaration(node) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        return factory.updateExportDeclaration(
+          node,
+          node.modifiers,
+          node.isTypeOnly,
+          node.exportClause,
+          rewrite(node.moduleSpecifier),
+          node.attributes
+        )
+      }
+      if (
+        ts.isCallExpression(node) &&
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        node.arguments.length > 0 &&
+        ts.isStringLiteral(node.arguments[0])
+      ) {
+        const [first, ...rest] = node.arguments
+        return factory.updateCallExpression(
+          node,
+          node.expression,
+          node.typeArguments,
+          [rewrite(first), ...rest.map((arg) => ts.visitNode(arg, visit))]
+        )
+      }
+      return ts.visitEachChild(node, visit, context)
+    }
+
+    return ts.visitNode(sourceFile, visit)
+  }
+}
+
+const customTransformers = { after: [rewriteImportPaths] }
 
 // The test files are not part of the type check (tsconfig.json excludes
 // them), so only their types are removed. This takes a few milliseconds
@@ -64,6 +164,7 @@ function transpileTestFiles(program, options) {
           {
             fileName: full,
             reportDiagnostics: true,
+            transformers: customTransformers,
             compilerOptions: {
               ...options,
               sourceMap: true,
@@ -145,7 +246,8 @@ function emit(program) {
     undefined,
     (fileName, text) => outputs.set(fileName, text),
     undefined,
-    false
+    false,
+    customTransformers
   )
   for (const [fileName, text] of outputs) {
     if (fileName.endsWith('.js')) {

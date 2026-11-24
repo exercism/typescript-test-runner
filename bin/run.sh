@@ -86,7 +86,7 @@ if test -f "${ROOT}/.prefetch-list"; then
   ( nice -n 19 xargs -P 8 -n 50 -a "${ROOT}/.prefetch-list" cat > /dev/null 2>&1 & )
 fi
 REPORTER="$ROOT/dist/reporter.mjs"
-SETUP="$ROOT/dist/setup.mjs"
+SETUP="$ROOT/dist/setup.cjs"
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
@@ -487,7 +487,7 @@ if test -n "${test_file}" && test -f "${OUTPUT}${test_file}"; then
   echo "⚙️  node --test ${test_file}"
   echo ""
 
-  # Run the tests with Node's built-in test runner. setup.mjs provides the
+  # Run the tests with Node's built-in test runner. setup.cjs provides the
   # Jest API the tests use, and reporter.mjs writes results.json. Node runs
   # the JavaScript written by bin/compile.cjs.
   #
@@ -497,12 +497,9 @@ if test -n "${test_file}" && test -f "${OUTPUT}${test_file}"; then
   # starting another one, and lets the reporter read the console messages.
   # --test-force-exit stops the process once the tests have finished, even
   # if the solution leaves a timer running.
-  # --disable-warning=ExperimentalWarning hides Node's warning about
-  # stripTypeScriptTypes (see src/tests.ts).
   cd "${OUTPUT}" && TEST_FILE="${OUTPUT}${test_file}" RESULTS_FILE="${result_file}" node \
-    --import "${SETUP}" \
+    --require "${SETUP}" \
     --enable-source-maps \
-    --disable-warning=ExperimentalWarning \
     --test \
     --test-isolation=none \
     --test-force-exit \

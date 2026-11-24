@@ -1,6 +1,6 @@
 {
   "status": "error",
-  "message": "<solution>/two-fer.test.ts:1\nimport { twoFer } from './two-fer'\n         ^\nSyntaxError: The requested module './two-fer' does not provide an export named 'twoFer'",
+  "message": "<solution>/two-fer.test.ts:1\nimport { twoFer } from './two-fer'\n         ^\nSyntaxError: The requested module './two-fer.js' does not provide an export named 'twoFer'",
   "tests": [],
   "version": 3
 }
