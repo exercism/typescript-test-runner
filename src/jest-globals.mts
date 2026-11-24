@@ -1,7 +1,7 @@
 // Provides the Jest API used by the track's test files, on top of node:test,
 // Jest's own `expect` package and `jest-mock`. setup.cts loads it before the
-// test file, and bin/compile.cjs points the test file's
-// `import ... from '@jest/globals'` at it. This file also:
+// test file, and points the test file's `import ... from '@jest/globals'` at
+// it. This file also:
 //
 // 1. makes the API available as globals, as Jest did.
 // 2. replaces `console` with Jest's BufferedConsole, which records each
