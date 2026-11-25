@@ -85,3 +85,8 @@ RUN set -ex; \
 
 FROM runner
 COPY --from=prefetch-list /tmp/prefetch-list /opt/test-runner/.prefetch-list
+
+# Run the tests as the unprivileged appuser, as the JavaScript test runner
+# does. Without root access, the solution being tested cannot change the
+# test runner's files in the image.
+USER appuser
