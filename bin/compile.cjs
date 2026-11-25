@@ -14,6 +14,7 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
+const { stripVTControlCharacters } = require('node:util')
 const ts = require('typescript')
 
 const outDir = path.resolve(process.argv[2])
@@ -91,7 +92,21 @@ function transpileTestFiles(program, options) {
             syntaxError.messageText,
             ' '
           )
-          const error = `${full}: ${message} (${line + 1}:${character})`
+          // Show the student the lines around the error, as Babel's code
+          // frame did. TypeScript's own format starts with a line that
+          // repeats the message, so that line is dropped.
+          const context = stripVTControlCharacters(
+            ts.formatDiagnosticsWithColorAndContext([syntaxError], {
+              getCurrentDirectory: () => rootDir,
+              getCanonicalFileName: (fileName) => fileName,
+              getNewLine: () => '\n',
+            })
+          )
+            .split('\n')
+            .slice(1)
+            .join('\n')
+            .trimEnd()
+          const error = `${full}: ${message} (${line + 1}:${character})\n${context}\n`
           fs.mkdirSync(path.dirname(outputPathOf(full)), { recursive: true })
           fs.writeFileSync(
             outputPathOf(full),
