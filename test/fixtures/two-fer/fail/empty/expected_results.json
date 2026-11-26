@@ -4,21 +4,21 @@
     {
       "name": "TwoFer > no name given",
       "status": "fail",
-      "message": "TypeError: (0 , two_fer_1.twoFer) is not a function",
+      "message": "TypeError: twoFer is not a function",
       "output": null,
       "test_code": "const expected = 'One for you, one for me.'\nexpect(twoFer()).toEqual(expected)"
     },
     {
       "name": "TwoFer > a name given",
       "status": "fail",
-      "message": "TypeError: (0 , two_fer_1.twoFer) is not a function",
+      "message": "TypeError: twoFer is not a function",
       "output": null,
       "test_code": "const expected = 'One for Alice, one for me.'\nexpect(twoFer('Alice')).toEqual(expected)"
     },
     {
       "name": "TwoFer > another name given",
       "status": "fail",
-      "message": "TypeError: (0 , two_fer_1.twoFer) is not a function",
+      "message": "TypeError: twoFer is not a function",
       "output": null,
       "test_code": "const expected = 'One for Bob, one for me.'\nexpect(twoFer('Bob')).toEqual(expected)"
     }

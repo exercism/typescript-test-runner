@@ -485,7 +485,27 @@ function sanitizeErrorMessage(specFilePath: string, message: string): string {
     return message.slice(message.indexOf('SyntaxError: <solution>'))
   }
 
+  return removeImportNames(message)
+}
+
+// tsc compiles `import { twoFer } from './two-fer'` to `two_fer_1.twoFer`,
+// and calls it as `(0 , two_fer_1.twoFer)()`. Node names those in its
+// errors, so this removes the parts tsc added and leaves the names the
+// student wrote.
+function removeImportNames(message: string): string {
   return message
+    .replace(
+      /\(0 , [A-Za-z_$][\w$]*_\d+\.default\) is not a function/g,
+      'the default export is not a function'
+    )
+    .replace(
+      /\(0 , [A-Za-z_$][\w$]*_\d+\.([\w$]+)\) is not a function/g,
+      '$1 is not a function'
+    )
+    .replace(
+      /\b[A-Za-z_$][\w$]*_\d+\.([\w$.]+) is not a function/g,
+      '$1 is not a function'
+    )
 }
 
 function findConfig(rootDir: string): null | ExerciseConfig {
