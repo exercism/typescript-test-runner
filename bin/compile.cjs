@@ -5,16 +5,29 @@
 // JavaScript into an output folder as ES modules, so Node can run the tests
 // without a transformer.
 
+// If TYPE_TESTS is "true", it also runs the type tests (*.tst.ts) with
+// tstyche after a successful type check, in this process. See
+// bin/type-tests.cjs.
+
 // Arguments:
 // $1: folder to write the JavaScript and source maps to
 
 // Output:
 // The same output and exit code as `tsc --noEmit`, run in the current folder.
+// The type tests write tstyche's output to tstyche.stdout.txt and
+// tstyche.stderr.txt in the current folder.
 
 const fs = require('node:fs')
 const path = require('node:path')
 const { stripVTControlCharacters } = require('node:util')
-const ts = require('typescript')
+
+const runTypeTests = process.env.TYPE_TESTS === 'true'
+
+// The type tests need the copy of TypeScript loaded by tstyche (see
+// bin/type-tests.cjs). The type check uses the same copy, so the type tests
+// can reuse its parsed files. Without type tests, the normal module loads
+// faster, from Node's compile cache.
+let ts
 
 const outDir = path.resolve(process.argv[2])
 const rootDir = process.cwd()
@@ -155,16 +168,39 @@ function emit(program) {
   )
 }
 
-ts.executeCommandLine(
-  ts.sys,
-  (program) => {
-    if (typeof program.getCompilerOptions !== 'function') {
-      return
+async function main() {
+  const typeTests = runTypeTests ? require('./type-tests.cjs') : undefined
+  ts = typeTests ? await typeTests.loadTypeScript() : require('typescript')
+
+  // tsc calls sys.exit as soon as it has reported the diagnostics. Record
+  // the exit code instead, so the type tests can run before the process
+  // exits.
+  let exitCode = 0
+  let checkedProgram
+  ts.executeCommandLine(
+    { ...ts.sys, exit: (code) => (exitCode = code) },
+    (program) => {
+      if (typeof program.getCompilerOptions !== 'function') {
+        return
+      }
+      if (typeof program.getProgram === 'function') {
+        program = program.getProgram()
+      }
+      checkedProgram = program
+    },
+    process.argv.slice(3)
+  )
+
+  if (checkedProgram) {
+    // run.sh stops when tsc exits with 2, so the type tests only run if it
+    // didn't.
+    if (typeTests && exitCode !== 2) {
+      await typeTests.run(ts, checkedProgram)
     }
-    if (typeof program.getProgram === 'function') {
-      program = program.getProgram()
-    }
-    emit(program)
-  },
-  process.argv.slice(3)
-)
+    emit(checkedProgram)
+  }
+
+  process.exit(exitCode)
+}
+
+main()
