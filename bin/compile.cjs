@@ -2,8 +2,9 @@
 
 // Synopsis:
 // Type-check the solution exactly as `tsc --noEmit` does, then write the
-// JavaScript into an output folder, so Node can run the tests without a
-// transformer.
+// JavaScript into an output folder as ES modules, so Node can run the tests
+// without a transformer. src/setup.mts finds the compiled files for the
+// imports in the tests and the solution.
 
 // Arguments:
 // $1: folder to write the JavaScript and source maps to
@@ -18,59 +19,6 @@ const ts = require('typescript')
 
 const outDir = path.resolve(process.argv[2])
 const rootDir = process.cwd()
-const setupModule = path.resolve(__dirname, '../dist/node-test/setup.cjs')
-
-// Change the imports while writing the JavaScript, so Node can load the
-// compiled files without a resolve hook:
-// - './two-fer.ts' becomes './two-fer.js', the name of the compiled file.
-// - '@jest/globals' becomes the runner's setup module, which gives the
-//   tests describe, it and Jest's expect on Node's test runner.
-function rewriteSpecifier(specifier) {
-  if (specifier === '@jest/globals') {
-    return setupModule
-  }
-  if (specifier.startsWith('.') && specifier.endsWith('.ts')) {
-    return specifier.replace(/\.ts$/, '.js')
-  }
-  return specifier
-}
-
-function rewriteImports(context) {
-  const { factory } = context
-  const visit = (node) => {
-    if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      node.moduleSpecifier &&
-      ts.isStringLiteral(node.moduleSpecifier)
-    ) {
-      const specifier = rewriteSpecifier(node.moduleSpecifier.text)
-      if (specifier !== node.moduleSpecifier.text) {
-        const literal = factory.createStringLiteral(specifier)
-        return ts.isImportDeclaration(node)
-          ? factory.updateImportDeclaration(
-              node,
-              node.modifiers,
-              node.importClause,
-              literal,
-              node.attributes
-            )
-          : factory.updateExportDeclaration(
-              node,
-              node.modifiers,
-              node.isTypeOnly,
-              node.exportClause,
-              literal,
-              node.attributes
-            )
-      }
-    }
-    return node
-  }
-  return (sourceFile) => ts.visitEachChild(sourceFile, visit, context)
-}
-
-const transformers = { before: [rewriteImports] }
-
 // Write source maps that point back at the original .ts files. Node reads
 // them (--enable-source-maps) for stack traces and for the origin of console
 // output, so both name the .ts lines the student wrote.
@@ -116,10 +64,8 @@ function transpileTestFiles(program, options) {
           {
             fileName: full,
             reportDiagnostics: true,
-            transformers,
             compilerOptions: {
               ...options,
-              module: ts.ModuleKind.CommonJS,
               sourceMap: true,
               inlineSourceMap: false,
               outDir: undefined,
@@ -130,7 +76,8 @@ function transpileTestFiles(program, options) {
         // TypeScript still writes JavaScript for a test file with a syntax
         // error. Babel stopped with a SyntaxError instead, so the compiled
         // file throws one, which the reporter shows as the suite failing to
-        // run.
+        // run. The error has no stack frames, like a syntax error found by
+        // Node itself.
         const syntaxError = diagnostics.find(
           (diagnostic) =>
             diagnostic.file &&
@@ -163,7 +110,7 @@ function transpileTestFiles(program, options) {
           fs.mkdirSync(path.dirname(outputPathOf(full)), { recursive: true })
           fs.writeFileSync(
             outputPathOf(full),
-            `throw new SyntaxError(${JSON.stringify(error)})\n`
+            `throw Object.assign(new SyntaxError(${JSON.stringify(error)}), { stack: ${JSON.stringify(`SyntaxError: ${error}`)} })\n`
           )
           continue
         }
@@ -189,14 +136,16 @@ function emit(program) {
   options.sourceMap = true
   options.declaration = false
   options.noEmitOnError = false
+  // Write ES modules, whatever module format tsconfig.json asks for. The
+  // package.json below tells Node to load them as ES modules.
+  options.module = ts.ModuleKind.ESNext
 
   const outputs = new Map()
   program.emit(
     undefined,
     (fileName, text) => outputs.set(fileName, text),
     undefined,
-    false,
-    transformers
+    false
   )
   for (const [fileName, text] of outputs) {
     if (fileName.endsWith('.js')) {
@@ -205,6 +154,11 @@ function emit(program) {
   }
 
   transpileTestFiles(program, options)
+
+  fs.writeFileSync(
+    path.join(outDir, 'package.json'),
+    JSON.stringify({ type: 'module' })
+  )
 }
 
 ts.executeCommandLine(

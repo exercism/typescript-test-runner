@@ -1,7 +1,35 @@
-import { AstParser, extractTests } from '@exercism/static-analysis'
-import type { ExtractedTestCase, ParsedSource } from '@exercism/static-analysis'
+import type { ConsoleBuffer } from '@jest/console'
 import fs from 'fs'
 import path from 'path'
+import { parseTests } from './tests'
+import type { ParsedTests, TestCase } from './tests'
+
+// The parts of Jest's results that this file reads. The reporter builds them
+// from the events of Node's test runner.
+export interface AssertionResult {
+  ancestorTitles: string[]
+  title: string
+  status: 'passed' | 'failed' | 'pending' | 'skipped'
+  failureMessages: string[]
+}
+
+export interface TestResult {
+  testFilePath: string
+  failureMessage?: string
+  testExecError?: { message: string }
+  console?: ConsoleBuffer
+  testResults: AssertionResult[]
+}
+
+export interface AggregatedResult {
+  numFailedTests: number
+  numFailedTestSuites: number
+  numPassedTests: number
+  numPendingTests: number
+  numPendingTestSuites: number
+  numRuntimeErrorTestSuites: number
+  testResults: TestResult[]
+}
 
 interface OutputInterface {
   status: 'fail' | 'pass' | 'error'
@@ -29,39 +57,21 @@ type ExerciseConfig = {
   }
 }
 
-// One message printed to the console, as buffered by node-test/console.cts
-export interface ConsoleEntry {
-  type: string
-  message: string
-  // The stack trace of the console call. The reporter uses it to work out
-  // which test printed the message, as Jest did.
-  origin: string
-}
-
-// One test's result, as reported by Node's test runner
-export interface TestOutcome {
-  name: string
-  // What the test threw, if it failed
-  error?: unknown
-}
-
 const OUTPUT_VERSION = 3
 
 export class Output {
   private readonly results: Partial<OutputInterface> &
     Pick<OutputInterface, 'tests'>
-  private readonly outputDir: string
-  private readonly sources: Record<string, ParsedSource>
-  private readonly tests: Record<string, ReturnType<typeof extractTests>>
+  private readonly outputFile: string
+  private readonly sources: Record<string, ParsedTests>
   private readonly config: null | ExerciseConfig
 
-  constructor(outputDir: string) {
-    this.outputDir = outputDir
+  constructor(outputFile: string) {
     this.results = { tests: [] }
+    this.outputFile = outputFile
 
-    this.config = findConfig(outputDir)
+    this.config = findConfig(path.dirname(this.outputFile))
     this.sources = {}
-    this.tests = {}
   }
 
   public error(message: string): void {
@@ -69,42 +79,23 @@ export class Output {
     this.results.message = message
   }
 
-  // Returns the contents of results.json
-  public finish({
-    topLevel,
-    skipped,
-  }: {
-    topLevel: number
-    skipped: number
-  }): string {
-    const outcomes = this.results.tests
-
-    // If no test file ran, report that no tests ran. run.sh replaces this
-    // with a pass if the type tests ran.
-    if (!this.results.status && topLevel === 0) {
-      return JSON.stringify(
-        {
-          version: 1,
-          status: 'error',
-          message:
-            'The submitted code was not subjected to any type or execution ' +
-            'tests. It did compile correctly, but something is wrong because ' +
-            'at least one test was expected.',
-        },
-        undefined,
-        2
-      )
-    }
-
+  public finish(aggregatedResults: AggregatedResult): void {
     if (!this.results.status) {
       this.results.status =
-        // Skipped tests are checked below. test.skip tests are fine if the
+        aggregatedResults.numRuntimeErrorTestSuites === 0 &&
+        aggregatedResults.numFailedTestSuites === 0 &&
+        // Pending tests are skipped tests. test.skip tests are fine if the
         // exercise reports that there are optional tests.
         //
-        outcomes.every((test) => test.status === 'pass') ? 'pass' : 'fail'
+        aggregatedResults.numFailedTests === 0
+          ? 'pass'
+          : 'fail'
 
       // Divert status if nothing ran
-      if (this.results.status === 'pass' && outcomes.length === 0) {
+      if (
+        this.results.status === 'pass' &&
+        aggregatedResults.numPassedTests === 0
+      ) {
         this.results.status = 'fail'
         this.error(
           'Expected to run at least one test, but none were found. This can ' +
@@ -114,7 +105,11 @@ export class Output {
         )
       }
 
-      if (this.results.status === 'pass' && skipped !== 0) {
+      if (
+        this.results.status === 'pass' &&
+        (aggregatedResults.numPendingTests !== 0 ||
+          aggregatedResults.numPendingTestSuites !== 0)
+      ) {
         if (
           !this.configFlag('flag.tests.includes-optional') &&
           this.config?.custom
@@ -132,9 +127,8 @@ export class Output {
     const parsedSources: Record<
       string,
       {
-        program: ParsedSource['program']
-        source: ParsedSource['source']
-        tests: Record<string, ExtractedTestCase>
+        source: string
+        tests: Record<string, TestCase>
       }
     > = {}
 
@@ -144,22 +138,15 @@ export class Output {
       .filter((path, index, self) => self.indexOf(path) === index)
       .forEach((file) => {
         try {
-          const [{ program, source }] = AstParser.ANALYZER.parseSync(
-            fs.readFileSync(file).toString()
-          )
-          const tests = extractTests(program)
+          const { source, tests } = parseTests(fs.readFileSync(file).toString())
 
           parsedSources[file] = {
-            program,
             source,
-            tests: tests.reduce<Record<string, ExtractedTestCase>>(
-              (results, item) => {
-                results[item.name(' > ')] = item
-                results[item.name(' ' as ' > ')] = item
-                return results
-              },
-              {}
-            ),
+            tests: tests.reduce<Record<string, TestCase>>((results, item) => {
+              results[item.name(' > ')] = item
+              results[item.name(' ' as ' > ')] = item
+              return results
+            }, {}),
           }
         } catch (err: unknown) {
           console.error(
@@ -199,11 +186,12 @@ export class Output {
     // Re-order the output so that tests output shows below main output
     const { status, message } = this.results
 
-    return JSON.stringify(
+    const artifact = JSON.stringify(
       { status, message, tests, version: OUTPUT_VERSION },
       undefined,
       2
     )
+    fs.writeFileSync(this.outputFile, artifact)
   }
 
   private configFlag(
@@ -216,44 +204,53 @@ export class Output {
     return this.config.custom[flag] as boolean
   }
 
-  // The test file failed to load, for example because the solution threw
-  // an error when it was imported. Jest called this "Test suite failed to
-  // run".
-  public suiteFailed(specFilePath: string, error: unknown): void {
-    this.error(
-      sanitizeErrorMessage(
-        specFilePath,
-        `  \u001b[1m● \u001b[22mTest suite failed to run\n\n${indent(
-          errorHeader(error)
-        )}\n`
-      )
-    )
-  }
-
-  public fileFinished(
+  public testFinished(
     specFilePath: string,
-    outcomes: TestOutcome[],
-    consoleEntries: ConsoleEntry[]
+    testResult: TestResult,
+    results: AggregatedResult
   ): void {
-    if (this.results.status === 'error') {
+    // Syntax errors etc. These are runtime errors: failures to run
+    if (results.numRuntimeErrorTestSuites > 0) {
+      this.error(
+        sanitizeErrorMessage(
+          specFilePath,
+          testResult.failureMessage ??
+            'Something went wrong when running the tests.'
+        )
+      )
       return
     }
 
-    const consoleOutputs: Record<string, string> = consoleEntries.length
-      ? buildOutput(specFilePath, consoleEntries, this.getSource(specFilePath))
+    // Suites ran fine. Output normally.
+    results.testResults.forEach((testResult) => {
+      this.testInnerFinished(specFilePath, testResult, testResult.testResults)
+    })
+  }
+
+  private getSource(specFilePath: string): ParsedTests {
+    if (!this.sources[specFilePath]) {
+      this.sources[specFilePath] = parseTests(
+        fs.readFileSync(specFilePath).toString()
+      )
+    }
+
+    return this.sources[specFilePath]
+  }
+
+  public testInnerFinished(
+    specFilePath: string,
+    testResult: TestResult,
+    innerResults: AssertionResult[]
+  ): void {
+    const consoleOutputs: Record<string, string> = testResult.console
+      ? buildOutput(
+          specFilePath,
+          testResult.console,
+          this.getSource(specFilePath)
+        )
       : {}
 
-    const outputs = outcomes.map(({ name, error }) => ({
-      name,
-      status: error === undefined ? ('pass' as const) : ('fail' as const),
-      message:
-        error === undefined
-          ? ''
-          : sanitizeErrorMessage(
-              specFilePath,
-              failureMessage(specFilePath, error)
-            ),
-    }))
+    const outputs = buildTestOutput(specFilePath, testResult, innerResults)
     const firstFailureIndex = outputs.findIndex(
       (output) => output.status === 'fail'
     )
@@ -278,42 +275,15 @@ export class Output {
     )
   }
 
-  // bin/run.sh sets COMPILED_DIR to the folder with the compiled files.
-  // This turns a path in that folder into the path of its .ts file.
-  public sourceOf(compiledPath: string): string {
-    const compiledDir = process.env.COMPILED_DIR
-    if (!compiledDir || !compiledPath.startsWith(path.join(compiledDir, '/'))) {
-      return compiledPath
-    }
-
-    return path
-      .join(this.outputDir, path.relative(compiledDir, compiledPath))
-      .replace(/\.js$/, '.ts')
-  }
-
-  private getSource(specFilePath: string): {
-    source: ParsedSource
-    tests: ExtractedTestCase[]
-  } {
-    if (!this.sources[specFilePath]) {
-      const [{ program, source }] = AstParser.ANALYZER.parseSync(
-        fs.readFileSync(specFilePath).toString()
-      )
-      this.tests[specFilePath] = extractTests(program)
-      this.sources[specFilePath] = { program, source }
-    }
-
-    return {
-      source: this.sources[specFilePath],
-      tests: this.tests[specFilePath],
-    }
+  public testStarted(_path: string): void {
+    // noop
   }
 }
 
 function buildOutput(
   specFilePath: string,
-  buffer: ConsoleEntry[],
-  { tests }: { source: ParsedSource; tests: ExtractedTestCase[] }
+  buffer: ConsoleBuffer,
+  { tests }: ParsedTests
 ): Record<string, string> {
   const outputs = buffer.reduce<Record<string, string[]>>((outputs, entry) => {
     // The origin stack trace will look something like this:
@@ -331,7 +301,7 @@ function buildOutput(
     //   ...
     // })
 
-    let foundTest: ExtractedTestCase | undefined
+    let foundTest: TestCase | undefined
     // Using find because it will break when something is found!
     entry.origin.split('\n').find((originLine) => {
       if (!originLine.includes(specFilePath)) {
@@ -347,9 +317,10 @@ function buildOutput(
         return undefined
       }
 
+      // Frames end in "12)", or in "12" for a function with no name.
       const messageLoc = {
         line: Number(line),
-        column: Number(column.slice(0, column.length - 1)),
+        column: parseInt(column, 10),
       }
       return (foundTest = tests.find(({ testNode }) => {
         if (messageLoc.line < testNode.loc.start.line) {
@@ -401,59 +372,66 @@ function buildOutput(
   }, {})
 }
 
-// Jest showed the error with the stack frames inside the solution, and cut
-// the stack at the test itself. Node's stack also goes on into the test
-// runner, so cut it at the first frame in the test file, and leave out the
-// frames inside Node.
-function failureMessage(specFilePath: string, error: unknown): string {
-  const stack =
-    error instanceof Error && typeof error.stack === 'string'
-      ? error.stack
-      : String(error)
-
-  const lines = stack.split('\n')
-  const firstFrame = lines.findIndex((line) => FRAME.test(line))
-  if (firstFrame === -1) {
-    return stack
+function buildTestOutput(
+  path: string,
+  testResult: TestResult,
+  inner: AssertionResult[]
+): Pick<OutputTestInterface, 'name' | 'status' | 'message'>[] {
+  if (testResult.testExecError) {
+    return [
+      {
+        name: testResult.testFilePath,
+        status: 'error',
+        message: sanitizeErrorMessage(
+          path,
+          testResult.failureMessage
+            ? removeStackTrace(testResult.failureMessage)
+            : testResult.testExecError.message
+        ),
+      },
+    ]
   }
 
-  const frames = lines.slice(firstFrame)
-  const testFrame = frames.findIndex((line) => line.includes(specFilePath))
-
-  return lines
-    .slice(0, firstFrame)
-    .concat(
-      frames
-        .slice(0, testFrame === -1 ? undefined : testFrame)
-        .filter((line) => !line.includes('(node:') && !line.includes(' node:'))
+  return inner
+    .filter(
+      (assert) => assert.status !== 'skipped' && assert.status !== 'pending'
     )
-    .join('\n')
-    .trimEnd()
+    .map((assert) => {
+      return {
+        name: assert.ancestorTitles.concat(assert.title).join(' > '),
+        status: assert.status === 'passed' ? 'pass' : 'fail',
+        message: sanitizeErrorMessage(
+          testResult.testFilePath,
+          assert.failureMessages.map(removeStackTrace).join('\n')
+        ),
+      }
+    })
 }
 
-const FRAME = /^\s+at /
-
-function errorHeader(error: unknown): string {
-  return error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error)
-}
-
-function indent(text: string): string {
-  return text
-    .split('\n')
-    .map((line) => `    ${line}`)
-    .join('\n')
+function removeStackTrace(message: string): string {
+  const i = message.indexOf('  at Object.')
+  if (i === -1) {
+    return message
+  }
+  const split = message.slice(0, i).lastIndexOf('\n')
+  return split === -1
+    ? message.slice(0, i).trimEnd()
+    : message.slice(0, split).trimEnd()
 }
 
 function sanitizeErrorMessage(specFilePath: string, message: string): string {
   const dirs = [
+    // bin/run.sh writes the compiled JavaScript to this folder.
     ...(process.env.COMPILED_DIR ? [process.env.COMPILED_DIR] : []),
     path.dirname(specFilePath),
     path.dirname(path.dirname(specFilePath)),
     process.cwd(),
     path.dirname(process.cwd()),
   ]
+
+  // Stack frames in ES modules name files by URL (file:///...), and Jest's
+  // code frames shorten that to file:/...
+  dirs.unshift(...dirs.flatMap((dir) => [`file://${dir}`, `file:${dir}`]))
 
   dirs.forEach((sensitivePath) => {
     while (message.includes(sensitivePath)) {
@@ -465,27 +443,7 @@ function sanitizeErrorMessage(specFilePath: string, message: string): string {
     return message.slice(message.indexOf('SyntaxError: <solution>'))
   }
 
-  return removeImportNames(message)
-}
-
-// tsc compiles `import { twoFer } from './two-fer'` to `two_fer_1.twoFer`,
-// and calls it as `(0 , two_fer_1.twoFer)()`. Node names those in its
-// errors, so this removes the parts tsc added and leaves the names the
-// student wrote.
-function removeImportNames(message: string): string {
   return message
-    .replace(
-      /\(0 , [A-Za-z_$][\w$]*_\d+\.default\) is not a function/g,
-      'the default export is not a function'
-    )
-    .replace(
-      /\(0 , [A-Za-z_$][\w$]*_\d+\.([\w$]+)\) is not a function/g,
-      '$1 is not a function'
-    )
-    .replace(
-      /\b[A-Za-z_$][\w$]*_\d+\.([\w$.]+) is not a function/g,
-      '$1 is not a function'
-    )
 }
 
 function findConfig(rootDir: string): null | ExerciseConfig {

@@ -27,9 +27,8 @@
     "test:bare": "corepack yarn node test/smoke.test.mjs && corepack yarn node test/skip.test.mjs && corepack yarn node test/import.test.mjs && corepack yarn node test/types.test.mjs"
   },
   "dependencies": {
-    "@exercism/static-analysis": "^0.13.0",
-    "@typescript-eslint/typescript-estree": "^7.18.0",
-    "@typescript-eslint/visitor-keys": "^7.18.0",
+    "@jest/console": "^29.7.0",
+    "acorn": "^8.15.0",
     "chalk": "^5.3.0",
     "expect": "^29.7.0",
     "jest-mock": "^29.7.0",

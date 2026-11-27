@@ -32,12 +32,6 @@ RUN set -ex; \
 RUN corepack install
 RUN corepack yarn --version
 
-# Install the packages into node_modules instead of using Plug'n'Play. Each
-# run links its output directory to this folder and calls the tools in
-# node_modules/.bin directly, so it no longer copies the yarn cache or runs
-# `yarn install`.
-ENV YARN_NODE_LINKER=node-modules
-
 # Build the test runner
 RUN set -ex; \
   # install all the development modules (used for building)

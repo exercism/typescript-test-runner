@@ -111,27 +111,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@exercism/static-analysis@npm:^0.13.0":
-  version: 0.13.0
-  resolution: "@exercism/static-analysis@npm:0.13.0"
-  peerDependencies:
-    "@typescript-eslint/typescript-estree": ^7.18.0
-    "@typescript-eslint/visitor-keys": ^7.18.0
-  checksum: 10/1456d651cce8339345c2b8fa53f55c7d54a901b9b9c3f29d7b5cd4ade3f573343fda4e2e7bacf6449beeaf8c5df58f939e47cdf9f013e7d63e9a486900f8fcae
-  languageName: node
-  linkType: hard
-
 "@exercism/typescript-test-runner@workspace:.":
   version: 0.0.0-use.local
   resolution: "@exercism/typescript-test-runner@workspace:."
   dependencies:
     "@exercism/eslint-config-tooling": "npm:^0.5.0"
-    "@exercism/static-analysis": "npm:^0.13.0"
+    "@jest/console": "npm:^29.7.0"
     "@tsconfig/node20": "npm:^20.1.4"
     "@types/node": "npm:^22.0.0"
     "@types/shelljs": "npm:^0"
-    "@typescript-eslint/typescript-estree": "npm:^7.18.0"
-    "@typescript-eslint/visitor-keys": "npm:^7.18.0"
+    acorn: "npm:^8.15.0"
     chalk: "npm:^5.3.0"
     eslint: "npm:^9.8.0"
     expect: "npm:^29.7.0"
@@ -171,6 +160,20 @@ __metadata:
     wrap-ansi: "npm:^8.1.0"
     wrap-ansi-cjs: "npm:wrap-ansi@^7.0.0"
   checksum: 10/e9ed5fd27c3aec1095e3a16e0c0cf148d1fee55a38665c35f7b3f86a9b5d00d042ddaabc98e8a1cb7463b9378c15f22a94eb35e99469c201453eb8375191f243
+  languageName: node
+  linkType: hard
+
+"@jest/console@npm:^29.7.0":
+  version: 29.7.0
+  resolution: "@jest/console@npm:29.7.0"
+  dependencies:
+    "@jest/types": "npm:^29.6.3"
+    "@types/node": "npm:*"
+    chalk: "npm:^4.0.0"
+    jest-message-util: "npm:^29.7.0"
+    jest-util: "npm:^29.7.0"
+    slash: "npm:^3.0.0"
+  checksum: 10/4a80c750e8a31f344233cb9951dee9b77bf6b89377cb131f8b3cde07ff218f504370133a5963f6a786af4d2ce7f85642db206ff7a15f99fe58df4c38ac04899e
   languageName: node
   linkType: hard
 
@@ -464,7 +467,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/typescript-estree@npm:7.18.0, @typescript-eslint/typescript-estree@npm:^7.18.0":
+"@typescript-eslint/typescript-estree@npm:7.18.0":
   version: 7.18.0
   resolution: "@typescript-eslint/typescript-estree@npm:7.18.0"
   dependencies:
@@ -497,7 +500,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/visitor-keys@npm:7.18.0, @typescript-eslint/visitor-keys@npm:^7.18.0":
+"@typescript-eslint/visitor-keys@npm:7.18.0":
   version: 7.18.0
   resolution: "@typescript-eslint/visitor-keys@npm:7.18.0"
   dependencies:
@@ -522,6 +525,15 @@ __metadata:
   bin:
     acorn: bin/acorn
   checksum: 10/d08c2d122bba32d0861e0aa840b2ee25946c286d5dc5990abca991baf8cdbfbe199b05aacb221b979411a2fea36f83e26b5ac4f6b4e0ce49038c62316c1848f0
+  languageName: node
+  linkType: hard
+
+"acorn@npm:^8.15.0":
+  version: 8.19.0
+  resolution: "acorn@npm:8.19.0"
+  bin:
+    acorn: bin/acorn
+  checksum: 10/99307d577b38d6a441cd478456633b5b669d32bc722633ff84f1f3c88d361735d7cf01d04ecbf1113c70f1f39e5ceceb95cd5bf93b15bacaddc8fca1ea5e7496
   languageName: node
   linkType: hard
 
