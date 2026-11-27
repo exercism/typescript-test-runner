@@ -1,6 +1,6 @@
 {
   "status": "error",
-  "message": "SyntaxError: <solution>/two-fer.test.ts: '}' expected. (2:0)\n\n    2 \n      \n\n      two-fer.test.ts:1:52\n        1 describe('twoFer()', t('another name given', () => {\n                                                             ~\n        The parser expected to find a '}' to match the '{' token here.\n",
+  "message": "SyntaxError: <solution>/two-fer.test.ts: '}' expected. (2:0)\n\n2 \n  \n\n  two-fer.test.ts:1:52\n    1 describe('twoFer()', t('another name given', () => {\n                                                         ~\n    The parser expected to find a '}' to match the '{' token here.\n",
   "tests": [],
   "version": 3
 }

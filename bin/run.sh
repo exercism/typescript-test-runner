@@ -85,9 +85,8 @@ ROOT="$(realpath $(dirname "$0")/..)"
 if test -f "${ROOT}/.prefetch-list"; then
   ( nice -n 19 xargs -P 8 -n 50 -a "${ROOT}/.prefetch-list" cat > /dev/null 2>&1 & )
 fi
-REPORTER="$ROOT/dist/reporter.js"
-SETUP="$ROOT/dist/jest/setup.js"
-CONFIG="$ROOT/jest.runner.config.js"
+REPORTER="$ROOT/dist/reporter.mjs"
+SETUP="$ROOT/dist/setup.cjs"
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
@@ -141,18 +140,13 @@ else
   echo ""
 fi
 
-echo "If the solution contains babel.config.js, package.json,        "
-echo "or tsconfig.json at the root, these configuration files will   "
+echo "If the solution contains package.json or tsconfig.json at the  "
+echo "root, these configuration files will                          "
 echo "be used during the test-runner process which we do not want.   "
 echo "The test-runner will therefore temporarily rename these files."
 echo ""
 
 # Rename configuration files
-if test -f "${OUTPUT}babel.config.js"; then
-  echo "✔️  renaming babel.config.js in output so it can be replaced."
-  mv "${OUTPUT}babel.config.js" "${OUTPUT}babel.config.js.💥.bak" || true
-fi;
-
 if test -f "${OUTPUT}package.json"; then
   echo "✔️  renaming package.json in output so it can be replaced."
   mv "${OUTPUT}package.json" "${OUTPUT}package.json.💥.bak" || true
@@ -191,35 +185,12 @@ else
   echo "standalone package."
   echo ""
 
-  if test -d "${ROOT}/node_modules"; then
-    # The Docker image installs the packages into node_modules. Link to that
-    # folder instead of copying the yarn cache and running `yarn install`
-    # in the output directory. The copy and the install took about 2 seconds
-    # with a warm disk cache, and much longer with a cold one. Node resolves
-    # the link to the real folder, so packages load from the image as before.
-    if ! test -e "${OUTPUT}node_modules"; then
-      echo "✔️  node_modules from root to output (link)"
-      ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
-    fi
-  else
-    echo "✔️  .yarn cache from root to output"
-    cp -r "${ROOT}/.yarn" "${OUTPUT}"
-
-    echo "✔️  .yarnrc.yml from root to output"
-    cp "${ROOT}/.yarnrc.yml" "${OUTPUT}/.yarnrc.yml"
-
-    echo "✔️  .yarn.lock from root to output"
-    cp "${ROOT}/yarn.lock" "${OUTPUT}/yarn.lock"
-
-    echo "✔️  .pnp.cjs from root to output"
-    cp "${ROOT}/.pnp.cjs" "${OUTPUT}/.pnp.cjs"
-
-    echo "✔️  .pnp.loader.mjs from root to output"
-    cp "${ROOT}/.pnp.loader.mjs" "${OUTPUT}/.pnp.loader.mjs"
+  # Link to the runner's node_modules, so tsc and tstyche find the types and
+  # packages they need. Node resolves the link to the real folder.
+  if ! test -e "${OUTPUT}node_modules"; then
+    echo "✔️  node_modules from root to output (link)"
+    ln -s "${ROOT}/node_modules" "${OUTPUT}node_modules"
   fi
-
-  echo "✔️  babel.config.js from root to output"
-  cp "${ROOT}/babel.config.js" "${OUTPUT}babel.config.js"
 
   echo "✔️  package.json from root to output"
   cp "${ROOT}/package.json" "${OUTPUT}package.json"
@@ -247,6 +218,10 @@ if test -f $configuration_file; then
   echo ""
 
   cat $configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
+
+  # Every exercise has at most one test file for Node's test runner. The
+  # other test files are type tests (*.tst.ts).
+  test_file=$(jq -r '[.files.test[] | select(endswith(".test.ts"))][0] // empty' "${configuration_file}")
 else
   if test -f $local_configuration_file; then
     echo "There is a configuration file in the .exercism local       "
@@ -257,6 +232,10 @@ else
     echo ""
 
     cat $local_configuration_file | jq -c '.files.test[]' | xargs -L 1 "$ROOT/bin/prepare.sh" ${OUTPUT}
+
+    # Every exercise has at most one test file for Node's test runner. The
+    # other test files are type tests (*.tst.ts).
+    test_file=$(jq -r '[.files.test[] | select(endswith(".test.ts"))][0] // empty' "${local_configuration_file}")
   else
     test_file="${SLUG}.test.ts"
 
@@ -275,12 +254,6 @@ else
       echo ""
 
       # Restore configuration files
-      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-        echo "✔️  restoring babel.config.js in output"
-        unlink "${OUTPUT}babel.config.js"
-        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-      fi;
-
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
         if test -f "${OUTPUT}package.json"; then
@@ -318,45 +291,6 @@ fi
 
 echo ""
 echo "╔═════════════════════════════════════════════════════════════╗"
-echo "  🔧 Preparing test project                                    "
-echo "╚═════════════════════════════════════════════════════════════╝"
-echo ""
-
-if test -d "${ROOT}/node_modules/.bin"; then
-  # Call the tools directly. Going through `corepack yarn run` started two
-  # extra Node processes (corepack, then yarn) before each tool, about half
-  # a second every time.
-  echo "✔️  using the tools in ${ROOT}/node_modules/.bin"
-  run_tool() { "${ROOT}/node_modules/.bin/$1" "${@:2}"; }
-  run_node() { node "$@"; }
-else
-  if test -d "${OUTPUT}node_modules"; then
-    echo "⚠️  Did not expect node_modules in output directory. This is likely an "
-    echo "   issue with the given solution or it is old. These will be ignored."
-    echo ""
-  fi
-
-  # In case it's not yet enabled
-  echo "✔️  enabling corepack"
-  corepack enable yarn;
-
-  echo "✔️  yarn version now: $(YARN_ENABLE_OFFLINE_MODE=1 corepack yarn --version)"
-  echo ""
-
-  if test -f "${OUTPUT}package.json"; then
-    echo "✔️  standalone package found installing packages from cache"
-    echo ""
-    ls -aln1 "$OUTPUT"
-    echo ""
-    cd "${OUTPUT}" && YARN_ENABLE_NETWORK=false YARN_ENABLE_HARDENED_MODE=false YARN_ENABLE_OFFLINE_MODE=true YARN_ENABLE_GLOBAL_CACHE=false corepack yarn install --immutable
-  fi;
-
-  run_tool() { YARN_ENABLE_OFFLINE_MODE=1 corepack yarn run "$@"; }
-  run_node() { YARN_ENABLE_OFFLINE_MODE=1 corepack yarn node "$@"; }
-fi
-
-echo ""
-echo "╔═════════════════════════════════════════════════════════════╗"
 echo "  ➤  Step 1/3: Build (tests: does it compile?)                "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
@@ -383,15 +317,14 @@ fi;
 
 # bin/compile.cjs type-checks the solution as `tsc --noEmit` does, with the
 # same output and exit code. It then writes the JavaScript and source maps
-# into COMPILED_DIR, and Jest runs those files without a transformer. Before,
-# Jest loaded Babel and compiled every file a second time.
+# into COMPILED_DIR, and Node runs those files as they are.
 COMPILED_DIR="$(mktemp -d)"
 export COMPILED_DIR
 trap 'rm -rf "${COMPILED_DIR}"' EXIT
 
 echo "⚙️  tsc"
 echo ""
-tsc_result="$( cd "${OUTPUT}" && run_node "${ROOT}/bin/compile.cjs" "${COMPILED_DIR}" 2>&1 )"
+tsc_result="$( cd "${OUTPUT}" && node "${ROOT}/bin/compile.cjs" "${COMPILED_DIR}" 2>&1 )"
 test_exit=$?
 
 echo "$tsc_result" > $result_file
@@ -415,12 +348,6 @@ if [ $test_exit -eq 2 ]; then
   echo ""
 
   # Restore configuration files
-  if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-    echo "✔️  restoring babel.config.js in output"
-    unlink "${OUTPUT}babel.config.js"
-    mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-  fi;
-
   if test -f "${OUTPUT}package.json.💥.bak"; then
     echo "✔️  restoring package.json in output"
     if test -f "${OUTPUT}package.json"; then
@@ -491,7 +418,7 @@ if test -d "${OUTPUT}__typetests__/"; then
     echo ""
     echo "⚙️  tstyche"
     echo ""
-    cd "${OUTPUT}" && run_tool tstyche --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
+    cd "${OUTPUT}" && "${ROOT}/node_modules/.bin/tstyche" --failFast 2> "${OUTPUT}tstyche.stderr.txt" 1> "${OUTPUT}tstyche.stdout.txt"
 
     tstyche_error_output="$(cat "${OUTPUT}tstyche.stderr.txt")"
 
@@ -511,12 +438,6 @@ if test -d "${OUTPUT}__typetests__/"; then
       echo ""
 
       # Restore configuration files
-      if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-        echo "✔️  restoring babel.config.js in output"
-        unlink "${OUTPUT}babel.config.js"
-        mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-      fi;
-
       if test -f "${OUTPUT}package.json.💥.bak"; then
         echo "✔️  restoring package.json in output"
         if test -f "${OUTPUT}package.json"; then
@@ -562,48 +483,52 @@ echo "  ➤  Step 3/3: Execution (tests: does the solution work?)     "
 echo "╚═════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Run tests. If Jest finds no test files, the reporter writes the "no tests"
-# error to results.json. Checking for that here would mean starting Jest a
-# second time (with --listTests) just to list the test files.
-echo ""
-echo "⚙️  jest <...>"
-echo ""
+if test -n "${test_file}" && test -f "${OUTPUT}${test_file}"; then
+  echo "⚙️  node --test ${test_file}"
+  echo ""
 
-cd "${OUTPUT}" && run_tool jest "${COMPILED_DIR}/" \
-                  --bail 1 \
-                  --ci \
-                  --colors \
-                  --config ${CONFIG} \
-                  --noStackTrace \
-                  --outputFile="${result_file}" \
-                  --passWithNoTests \
-                  --reporters "${REPORTER}" \
-                  --roots "${COMPILED_DIR}" \
-                  --setupFilesAfterEnv ${SETUP} \
-                  --verbose false \
-                  --testLocationInResults
+  # Run the tests with Node's built-in test runner. setup.cjs provides the
+  # Jest API the tests use, and reporter.mjs writes results.json. Node runs
+  # the JavaScript written by bin/compile.cjs.
+  #
+  # --enable-source-maps makes stack traces and console origins name the .ts
+  # lines, as with Jest.
+  # --test-isolation=none runs the test file in this process, instead of
+  # starting another one, and lets the reporter read the console messages.
+  # --test-force-exit stops the process once the tests have finished, even
+  # if the solution leaves a timer running.
+  cd "${OUTPUT}" && TEST_FILE="${OUTPUT}${test_file}" RESULTS_FILE="${result_file}" node \
+    --require "${SETUP}" \
+    --enable-source-maps \
+    --test \
+    --test-isolation=none \
+    --test-force-exit \
+    --test-reporter="${REPORTER}" \
+    "${COMPILED_DIR}/${test_file%.ts}.js"
 
-# Convert exit(1) (jest worked, but there are failing tests) to exit(0)
-test_exit=$?
+  # Convert exit(1) (the tests ran, but some failed) to exit(0)
+  test_exit=$?
 
-if [ $test_exit -eq 1 ]; then
-  echo "❌ not all tests (*.test.ts) passed."
-elif grep -q "not subjected to any type or execution tests" "${result_file}"; then
-  # Jest found no test files, and the reporter wrote the "no tests" error.
-  echo "✔️  no jest tests (*.test.ts) discovered."
-
-  if [ "$has_type_test" = true ]; then
-    echo ""
-    echo "✅  did run type tests, so this is fine."
-
-    # TODO: use results from tstyche
-    runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
-    echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"${runner_result}\" }" > $result_file
+  if [ $test_exit -eq 1 ]; then
+    echo "❌ not all tests (*.test.ts) passed."
   else
-    echo "❌ neither type tests, nor execution tests ran"
-  fi
+    echo "✅ all tests (*.test.ts) passed."
+  fi;
+elif [ "$has_type_test" = true ]; then
+  test_exit=0
+  echo "✔️  no tests (*.test.ts) discovered."
+  echo ""
+  echo "✅  did run type tests, so this is fine."
+
+  # TODO: use results from tstyche
+  runner_result="The type tests ran correctly. We are working on showing the individual tests results but for now, everything is fine!"
+  echo "{ \"version\": 1, \"status\": \"pass\", \"message\": \"${runner_result}\" }" > $result_file
 else
-  echo "✅ all tests (*.test.ts) passed."
+  # Version 3 output can't have an empty list of tests, so this uses the
+  # version 1 format, which has no tests key.
+  test_exit=0
+  echo "{ \"version\": 1, \"status\": \"error\", \"message\": \"The submitted code was not subjected to any type or execution tests. It did compile correctly, but something is wrong because at least one test was expected.\" }" > "${result_file}"
+  echo "❌ neither type tests, nor execution tests ran"
 fi;
 
 echo ""
@@ -612,12 +537,6 @@ echo "they were disabled and now need to be restored."
 echo ""
 
 # Restore configuration files
-if test -f "${OUTPUT}babel.config.js.💥.bak"; then
-  echo "✔️  restoring babel.config.js in output"
-  unlink "${OUTPUT}babel.config.js"
-  mv "${OUTPUT}babel.config.js.💥.bak" "${OUTPUT}babel.config.js" || true
-fi;
-
 if test -f "${OUTPUT}package.json.💥.bak"; then
   echo "✔️  restoring package.json in output"
   if test -f "${OUTPUT}package.json"; then

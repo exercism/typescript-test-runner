@@ -2,9 +2,8 @@
 
 // Synopsis:
 // Type-check the solution exactly as `tsc --noEmit` does, then write the
-// JavaScript for Jest into an output folder, so Jest can run it without a
-// transformer. Before, Jest loaded Babel and compiled every file again
-// after tsc had already parsed and checked them.
+// JavaScript into an output folder as ES modules, so Node can run the tests
+// without a transformer.
 
 // Arguments:
 // $1: folder to write the JavaScript and source maps to
@@ -19,10 +18,9 @@ const ts = require('typescript')
 
 const outDir = path.resolve(process.argv[2])
 const rootDir = process.cwd()
-
-// Write source maps that point back at the original .ts files. Jest reads
-// them (through source-map-support) for stack traces and for the origin of
-// console output, so both name the .ts lines the student wrote.
+// Write source maps that point back at the original .ts files. Node reads
+// them (--enable-source-maps) for stack traces and for the origin of console
+// output, so both name the .ts lines the student wrote.
 function writeWithSourceMap(jsFile, code, map, sourceFile) {
   const parsed = JSON.parse(map)
   parsed.sources = sourceFile
@@ -67,7 +65,6 @@ function transpileTestFiles(program, options) {
             reportDiagnostics: true,
             compilerOptions: {
               ...options,
-              module: ts.ModuleKind.CommonJS,
               sourceMap: true,
               inlineSourceMap: false,
               outDir: undefined,
@@ -77,7 +74,9 @@ function transpileTestFiles(program, options) {
         )
         // TypeScript still writes JavaScript for a test file with a syntax
         // error. Babel stopped with a SyntaxError instead, so the compiled
-        // file throws one, which Jest reports as the suite failing to run.
+        // file throws one, which the reporter shows as the suite failing to
+        // run. The error has no stack frames, like a syntax error found by
+        // Node itself.
         const syntaxError = diagnostics.find(
           (diagnostic) =>
             diagnostic.file &&
@@ -110,7 +109,7 @@ function transpileTestFiles(program, options) {
           fs.mkdirSync(path.dirname(outputPathOf(full)), { recursive: true })
           fs.writeFileSync(
             outputPathOf(full),
-            `throw new SyntaxError(${JSON.stringify(error)})\n`
+            `throw Object.assign(new SyntaxError(${JSON.stringify(error)}), { stack: ${JSON.stringify(`SyntaxError: ${error}`)} })\n`
           )
           continue
         }
@@ -136,6 +135,9 @@ function emit(program) {
   options.sourceMap = true
   options.declaration = false
   options.noEmitOnError = false
+  // Write ES modules, whatever module format tsconfig.json asks for. The
+  // package.json below tells Node to load them as ES modules.
+  options.module = ts.ModuleKind.ESNext
 
   const outputs = new Map()
   program.emit(undefined, (fileName, text) => outputs.set(fileName, text))
@@ -146,14 +148,23 @@ function emit(program) {
   }
 
   transpileTestFiles(program, options)
+
+  fs.writeFileSync(
+    path.join(outDir, 'package.json'),
+    JSON.stringify({ type: 'module' })
+  )
 }
 
-ts.executeCommandLine(ts.sys, (program) => {
-  if (typeof program.getCompilerOptions !== 'function') {
-    return
-  }
-  if (typeof program.getProgram === 'function') {
-    program = program.getProgram()
-  }
-  emit(program)
-}, process.argv.slice(3))
+ts.executeCommandLine(
+  ts.sys,
+  (program) => {
+    if (typeof program.getCompilerOptions !== 'function') {
+      return
+    }
+    if (typeof program.getProgram === 'function') {
+      program = program.getProgram()
+    }
+    emit(program)
+  },
+  process.argv.slice(3)
+)
